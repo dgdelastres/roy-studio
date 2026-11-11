@@ -94,8 +94,8 @@ export const PILPIS_DEPARTMENTS: Department[] = [
   }
 ];
 
-export function getDepartmentById(id: string): Department {
-  return PILPIS_DEPARTMENTS.find(d => d.id === id) || {
+export function getDepartmentById(id: string, departmentsList: Department[] = PILPIS_DEPARTMENTS): Department {
+  return departmentsList.find(d => d.id === id) || {
     id,
     code: id,
     name: 'Departamento General',
