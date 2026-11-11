@@ -50,10 +50,13 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
     // Auto-foco directo e inmediato en el campo de Nombre al abrir (Decisión grill-me)
     if (isOpen) {
+      window.focus();
       const timer = setTimeout(() => {
-        nameInputRef.current?.focus();
-        nameInputRef.current?.select();
-      }, 60);
+        if (nameInputRef.current) {
+          nameInputRef.current.focus({ preventScroll: true });
+          nameInputRef.current.select();
+        }
+      }, 70);
       return () => clearTimeout(timer);
     }
   }, [taskToEdit, allTasks, isOpen]);
@@ -133,8 +136,16 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   const availablePredecessors = allTasks.filter(t => t.id !== id);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+    <div
+      className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] z-[9999] pointer-events-auto select-text"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400">
@@ -151,7 +162,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -173,9 +184,11 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 type="text"
                 value={id}
                 onChange={e => setId(e.target.value)}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
                 disabled={!!taskToEdit}
                 placeholder="ej: T01"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed select-text cursor-text"
               />
             </div>
 
@@ -189,8 +202,20 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.currentTarget.focus();
+                }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  e.currentTarget.focus();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.currentTarget.focus();
+                }}
                 placeholder="ej: Simulación de Columnas de Fraccionamiento C4"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-hidden select-text cursor-text"
               />
             </div>
           </div>
@@ -207,7 +232,9 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 step="1"
                 value={duration}
                 onChange={e => setDuration(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-hidden select-text cursor-text"
               />
             </div>
 
@@ -219,7 +246,9 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               <select
                 value={departmentId}
                 onChange={e => setDepartmentId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-hidden select-text"
               >
                 {departments.map(d => (
                   <option key={d.id} value={d.id}>
