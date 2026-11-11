@@ -7,6 +7,7 @@ import { RoyCanvas } from './components/roy-canvas/RoyCanvas';
 import { GanttView } from './components/gantt/GanttView';
 import { TaskTable } from './components/task-table/TaskTable';
 import { TaskModal } from './components/task-dialog/TaskModal';
+import { ImportModal } from './components/import-dialog/ImportModal';
 import { LayoutDirection } from './components/roy-canvas/layout';
 import { exportTasksToExcel } from './utils/export/exportExcel';
 import { exportProjectReportPdf } from './utils/export/exportPdf';
@@ -21,6 +22,7 @@ export const App: React.FC = () => {
   const [isDark, setIsDark] = useState<boolean>(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
 
   useEffect(() => {
@@ -137,29 +139,25 @@ export const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleLoadJson = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = event => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (Array.isArray(parsed.tasks)) {
-          setTasks(parsed.tasks);
-          triggerCelebration();
-        } else if (Array.isArray(parsed)) {
-          setTasks(parsed);
-          triggerCelebration();
-        } else {
-          alert('El archivo JSON no tiene un formato válido de tareas ROY.');
-        }
-      } catch (err) {
-        alert('Error al leer el archivo JSON.');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+  const handleImportTasks = (importedTasks: Task[], mode: 'replace' | 'append') => {
+    if (mode === 'replace') {
+      setTasks(importedTasks);
+    } else {
+      setTasks(prev => {
+        const existingIds = new Set(prev.map(t => t.id));
+        const merged = [...prev];
+        importedTasks.forEach(item => {
+          let uniqueId = item.id;
+          if (existingIds.has(uniqueId)) {
+            uniqueId = `${item.id}_new`;
+          }
+          existingIds.add(uniqueId);
+          merged.push({ ...item, id: uniqueId });
+        });
+        return merged;
+      });
+    }
+    triggerCelebration();
   };
 
   return (
@@ -189,7 +187,7 @@ export const App: React.FC = () => {
           )
         }
         onSaveJson={handleSaveJson}
-        onLoadJson={handleLoadJson}
+        onOpenImportModal={() => setIsImportModalOpen(true)}
       />
 
       <main className="flex-1 relative overflow-hidden">
@@ -202,6 +200,10 @@ export const App: React.FC = () => {
             direction={direction}
             onEditTask={task => {
               setTaskToEdit(task);
+              setIsModalOpen(true);
+            }}
+            onAddTask={() => {
+              setTaskToEdit(null);
               setIsModalOpen(true);
             }}
             onAddDependency={handleAddDependency}
@@ -248,6 +250,12 @@ export const App: React.FC = () => {
         onDelete={handleDeleteTask}
         taskToEdit={taskToEdit}
         allTasks={calculation.tasks}
+      />
+
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportTasks={handleImportTasks}
       />
     </div>
   );

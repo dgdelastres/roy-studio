@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Network,
   Calendar,
@@ -6,7 +6,7 @@ import {
   Sun,
   Moon,
   Download,
-  FolderOpen,
+  Upload,
   Save,
   Trash2,
   Sparkles,
@@ -38,7 +38,7 @@ interface TopBarProps {
   onExportExcel: () => void;
   onExportPdf: () => void;
   onSaveJson: () => void;
-  onLoadJson: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onOpenImportModal: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -59,22 +59,40 @@ export const TopBar: React.FC<TopBarProps> = ({
   onExportExcel,
   onExportPdf,
   onSaveJson,
-  onLoadJson,
+  onOpenImportModal,
 }) => {
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
+        setIsExportOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleExportAction = (action: () => void) => {
+    setIsExportOpen(false);
+    action();
+  };
+
   return (
-    <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 flex items-center justify-between gap-3 shrink-0 select-none z-30">
-      <div className="flex items-center gap-3">
+    <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 flex items-center justify-between z-30 shrink-0">
+      <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white font-mono font-bold shadow-md shadow-blue-500/20 text-sm">
-            ROY
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-500 flex items-center justify-center text-white font-mono font-black text-sm shadow-md shadow-blue-500/20">
+            R
           </div>
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">
                 ROY Studio
               </span>
-              <span className="px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono text-[10px] font-bold">
-                MPM
+              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                v1.0
               </span>
             </div>
             <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
@@ -170,67 +188,83 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="hidden sm:inline">Caso PILPIS</span>
         </button>
 
-        <div className="relative group">
-          <button className="px-2.5 py-1.5 rounded-lg bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition-opacity">
+        <button
+          onClick={onOpenImportModal}
+          className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+          title="Importar tareas desde Excel (.xlsx) o archivo JSON de compañeros"
+        >
+          <Upload className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+          <span>Importar</span>
+        </button>
+
+        <div
+          className="relative"
+          ref={exportRef}
+          onMouseEnter={() => setIsExportOpen(true)}
+          onMouseLeave={() => setIsExportOpen(false)}
+        >
+          <button
+            onClick={() => setIsExportOpen(prev => !prev)}
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition-opacity"
+          >
             <Download className="w-3.5 h-3.5" />
             <span>Exportar</span>
           </button>
 
-          <div className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1 z-50 hidden group-hover:block divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-            <div className="py-1">
-              <button
-                onClick={onExportSvg}
-                className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2"
-              >
-                <FileText className="w-4 h-4 text-indigo-500" />
-                <span>Exportar SVG Vectorial (ROY)</span>
-              </button>
-              <button
-                onClick={onExportPng}
-                className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2"
-              >
-                <Image className="w-4 h-4 text-emerald-500" />
-                <span>Exportar Imagen PNG HD (2x)</span>
-              </button>
+          {isExportOpen && (
+            <div className="absolute right-0 top-full pt-1.5 w-56 z-50 animate-in fade-in duration-100">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl py-1 divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                <div className="py-1">
+                  <button
+                    onClick={() => handleExportAction(onExportSvg)}
+                    className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <FileText className="w-4 h-4 text-indigo-500" />
+                    <span>Exportar SVG Vectorial (ROY)</span>
+                  </button>
+                  <button
+                    onClick={() => handleExportAction(onExportPng)}
+                    className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Image className="w-4 h-4 text-emerald-500" />
+                    <span>Exportar Imagen PNG HD (2x)</span>
+                  </button>
+                </div>
+                <div className="py-1">
+                  <button
+                    onClick={() => handleExportAction(onExportExcel)}
+                    className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                    <span>Exportar a Excel (.xlsx)</span>
+                  </button>
+                  <button
+                    onClick={() => handleExportAction(onExportPdf)}
+                    className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <FileText className="w-4 h-4 text-red-500" />
+                    <span>Informe Técnico PDF (Memoria)</span>
+                  </button>
+                </div>
+                <div className="py-1">
+                  <button
+                    onClick={() => handleExportAction(onSaveJson)}
+                    className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Save className="w-4 h-4 text-blue-500" />
+                    <span>Guardar Proyecto (.json)</span>
+                  </button>
+                  <button
+                    onClick={() => handleExportAction(onClearProject)}
+                    className="w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Nuevo Proyecto Vacío</span>
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="py-1">
-              <button
-                onClick={onExportExcel}
-                className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-green-600" />
-                <span>Exportar a Excel (.xlsx)</span>
-              </button>
-              <button
-                onClick={onExportPdf}
-                className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2"
-              >
-                <FileText className="w-4 h-4 text-red-500" />
-                <span>Informe Técnico PDF (Memoria)</span>
-              </button>
-            </div>
-            <div className="py-1">
-              <button
-                onClick={onSaveJson}
-                className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2"
-              >
-                <Save className="w-4 h-4 text-blue-500" />
-                <span>Guardar Proyecto (.json)</span>
-              </button>
-              <label className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 cursor-pointer">
-                <FolderOpen className="w-4 h-4 text-amber-500" />
-                <span>Cargar Proyecto (.json)</span>
-                <input type="file" accept=".json" onChange={onLoadJson} className="hidden" />
-              </label>
-              <button
-                onClick={onClearProject}
-                className="w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Nuevo Proyecto Vacío</span>
-              </button>
-            </div>
-          </div>
+          )}
         </div>
 
         <button
