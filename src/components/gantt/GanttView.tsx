@@ -1,17 +1,19 @@
 import React, { useState, useMemo } from 'react';
-import { Task } from '../../core/roy-engine/types';
+import { Task, Department } from '../../core/roy-engine/types';
 import { PILPIS_DEPARTMENTS, getDepartmentById } from '../../theme/departments';
 import { Calendar, Filter } from 'lucide-react';
 
 interface GanttViewProps {
   tasks: Task[];
   totalDuration: number;
+  departments?: Department[];
   onEditTask: (task: Task) => void;
 }
 
 export const GanttView: React.FC<GanttViewProps> = ({
   tasks,
   totalDuration,
+  departments = PILPIS_DEPARTMENTS,
   onEditTask,
 }) => {
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
@@ -55,7 +57,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
               className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-medium focus:ring-1 focus:ring-blue-500 focus:outline-hidden"
             >
               <option value="ALL">Todos los Departamentos (Oficina Técnica)</option>
-              {PILPIS_DEPARTMENTS.map(d => (
+              {departments.map(d => (
                 <option key={d.id} value={d.id}>
                   {d.code} — {d.name}
                 </option>
@@ -78,23 +80,25 @@ export const GanttView: React.FC<GanttViewProps> = ({
       <div className="flex-1 overflow-auto flex">
         <div className="w-[360px] shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-10 shadow-xs">
           <div className="h-10 border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/80 px-4 flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300 sticky top-0">
-            <span>ACTIVIDAD / DPTO</span>
-            <div className="flex items-center gap-3 font-mono">
-              <span title="Duración">DUR</span>
-              <span title="Comienzo Temprano - Fin Temprano">ES → EF</span>
-              <span title="Holgura Total">HT</span>
+            <span>Actividad</span>
+            <div className="flex items-center gap-4 text-[10px]">
+              <span className="w-6 text-right">Dur</span>
+              <span className="w-14 text-center">ES - EF</span>
+              <span className="w-7 text-right">HT</span>
             </div>
           </div>
 
           {filteredTasks.map(task => {
-            const dept = getDepartmentById(task.departmentId);
+            const dept = getDepartmentById(task.departmentId, departments);
             const isCrit = task.isCritical;
             return (
               <div
                 key={task.id}
                 onClick={() => onEditTask(task)}
-                className={`h-11 px-4 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between hover:bg-blue-50/50 dark:hover:bg-blue-950/20 cursor-pointer transition-colors ${
-                  isCrit ? 'bg-red-50/30 dark:bg-red-950/10' : ''
+                className={`h-11 border-b border-slate-100 dark:border-slate-800/60 px-4 flex items-center justify-between cursor-pointer transition-colors ${
+                  isCrit
+                    ? 'bg-red-50/40 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-950/40'
+                    : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0 pr-2">
@@ -130,39 +134,39 @@ export const GanttView: React.FC<GanttViewProps> = ({
         </div>
 
         <div className="flex-1 overflow-x-auto relative">
-          <div style={{ width: `${chartWidth}px` }} className="relative min-h-full">
-            <div className="h-10 border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/80 flex items-center sticky top-0 z-10">
+          <div style={{ width: `${chartWidth}px` }}>
+            <div className="h-10 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex sticky top-0 z-10 font-mono text-[10px] font-bold text-slate-500 dark:text-slate-400">
               {timeHeaders.map(m => (
                 <div
                   key={m}
                   style={{ width: `${pixelsPerMonth}px` }}
-                  className="h-full border-r border-slate-200 dark:border-slate-700/60 flex items-center justify-center text-[10px] font-mono font-bold text-slate-600 dark:text-slate-400"
+                  className="shrink-0 border-r border-slate-200 dark:border-slate-800 flex items-center justify-center"
                 >
                   M{m}
                 </div>
               ))}
             </div>
 
-            <div className="absolute inset-0 top-10 pointer-events-none flex">
-              {timeHeaders.map(m => (
-                <div
-                  key={m}
-                  style={{ width: `${pixelsPerMonth}px` }}
-                  className="h-full border-r border-slate-100 dark:border-slate-800/40"
-                />
-              ))}
-            </div>
-
             <div className="relative">
+              <div className="absolute inset-0 flex pointer-events-none">
+                {timeHeaders.map(m => (
+                  <div
+                    key={m}
+                    style={{ width: `${pixelsPerMonth}px` }}
+                    className="shrink-0 border-r border-slate-100 dark:border-slate-800/40 h-full"
+                  />
+                ))}
+              </div>
+
               {filteredTasks.map(task => {
-                const dept = getDepartmentById(task.departmentId);
-                const isCrit = task.isCritical;
+                const dept = getDepartmentById(task.departmentId, departments);
                 const es = task.earlyStart ?? 0;
                 const dur = task.duration;
                 const ht = task.totalFloat ?? 0;
+                const isCrit = task.isCritical;
 
                 const leftPx = es * pixelsPerMonth;
-                const widthPx = Math.max(12, dur * pixelsPerMonth);
+                const widthPx = dur * pixelsPerMonth;
                 const floatWidthPx = ht * pixelsPerMonth;
 
                 return (
@@ -170,6 +174,19 @@ export const GanttView: React.FC<GanttViewProps> = ({
                     key={task.id}
                     className="h-11 border-b border-slate-100 dark:border-slate-800/60 relative flex items-center"
                   >
+                    {ht > 0 && (
+                      <div
+                        style={{
+                          left: `${leftPx + widthPx}px`,
+                          width: `${floatWidthPx}px`,
+                        }}
+                        className="absolute h-4 rounded-r-md border-y border-r border-dashed border-slate-400 dark:border-slate-600 bg-slate-200/50 dark:bg-slate-700/30 flex items-center justify-center text-[9px] font-mono text-slate-500 dark:text-slate-400"
+                        title={`Holgura Total: ${ht} meses`}
+                      >
+                        {floatWidthPx > 20 && `+${ht}m`}
+                      </div>
+                    )}
+
                     <div
                       onClick={() => onEditTask(task)}
                       style={{
@@ -177,24 +194,13 @@ export const GanttView: React.FC<GanttViewProps> = ({
                         width: `${widthPx}px`,
                         backgroundColor: isCrit ? '#DC2626' : dept.color,
                       }}
-                      className="absolute h-6 rounded-md shadow-xs flex items-center px-2 text-[10px] text-white font-mono font-semibold truncate cursor-pointer hover:brightness-110 transition-all z-1"
-                      title={`[${task.id}] ${task.name} | ES: ${task.earlyStart}m, EF: ${task.earlyFinish}m | Holgura: ${task.totalFloat}m`}
+                      className={`absolute h-6 rounded-md shadow-xs flex items-center px-2 text-white font-mono text-[10px] font-bold cursor-pointer hover:opacity-90 transition-opacity truncate ${
+                        isCrit ? 'ring-2 ring-red-400/60' : ''
+                      }`}
+                      title={`${task.name} (${task.id}) · Duración: ${dur}m · ES=${es}, EF=${task.earlyFinish}, HT=${ht}`}
                     >
                       <span className="truncate">{task.id}</span>
                     </div>
-
-                    {ht > 0 && (
-                      <div
-                        style={{
-                          left: `${leftPx + widthPx}px`,
-                          width: `${floatWidthPx}px`,
-                        }}
-                        className="absolute h-4 rounded-r-md border border-dashed border-slate-400 dark:border-slate-600 bg-slate-200/50 dark:bg-slate-800/50 flex items-center justify-center text-[9px] font-mono text-slate-600 dark:text-slate-400 select-none"
-                        title={`Holgura Total HT = ${ht} meses`}
-                      >
-                        +{ht}m
-                      </div>
-                    )}
                   </div>
                 );
               })}

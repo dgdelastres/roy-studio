@@ -13,15 +13,16 @@ export function getLayoutedElements(
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
   const nodeWidth = viewMode === 'full' ? 290 : 210;
-  const nodeHeight = viewMode === 'full' ? 155 : 85;
+  const nodeHeight = viewMode === 'full' ? 160 : 85;
 
   const isHorizontal = direction === 'LR';
   dagreGraph.setGraph({
     rankdir: direction,
     ranker: 'network-simplex',
-    nodesep: isHorizontal ? 90 : 95,
-    ranksep: isHorizontal ? 165 : 130,
-    edgesep: 30,
+    align: isHorizontal ? 'UL' : undefined,
+    nodesep: isHorizontal ? 110 : 120,
+    ranksep: isHorizontal ? 180 : 150,
+    edgesep: 45,
     marginx: 60,
     marginy: 60,
   });
@@ -31,7 +32,11 @@ export function getLayoutedElements(
   });
 
   edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
+    const isCritical = (edge.data as Record<string, unknown>)?.isCritical;
+    dagreGraph.setEdge(edge.source, edge.target, {
+      minlen: 1,
+      weight: isCritical ? 3 : 1,
+    });
   });
 
   dagre.layout(dagreGraph);
@@ -49,5 +54,16 @@ export function getLayoutedElements(
     } as Node;
   });
 
-  return { nodes: layoutedNodes, edges };
+  const layoutedEdges = edges.map((edge) => {
+    const edgeWithPoints = dagreGraph.edge(edge.source, edge.target);
+    return {
+      ...edge,
+      data: {
+        ...(edge.data || {}),
+        points: edgeWithPoints?.points || undefined,
+      },
+    };
+  });
+
+  return { nodes: layoutedNodes, edges: layoutedEdges };
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Task, Dependency, DependencyType } from '../../core/roy-engine/types';
+import { Task, Dependency, DependencyType, Department } from '../../core/roy-engine/types';
 import { PILPIS_DEPARTMENTS } from '../../theme/departments';
 import { X, Plus, Trash2, Save, Layers, Clock, Building2, Link2 } from 'lucide-react';
 
@@ -10,6 +10,7 @@ interface TaskModalProps {
   onDelete?: (taskId: string) => void;
   taskToEdit?: Task | null;
   allTasks: Task[];
+  departments?: Department[];
 }
 
 export const TaskModal: React.FC<TaskModalProps> = ({
@@ -19,6 +20,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   onDelete,
   taskToEdit,
   allTasks,
+  departments = PILPIS_DEPARTMENTS,
 }) => {
   const [id, setId] = useState('');
   const [name, setName] = useState('');
@@ -49,19 +51,23 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   if (!isOpen) return null;
 
   const handleAddDependency = () => {
-    const existingPredIds = new Set(dependencies.map(d => d.predecessorId));
-    const available = allTasks.filter(t => t.id !== id && !existingPredIds.has(t.id));
+    const availableTasks = allTasks.filter(
+      t => t.id !== id && !dependencies.some(d => d.predecessorId === t.id)
+    );
+    if (availableTasks.length === 0) return;
 
-    if (available.length === 0) {
-      setValidationError('No hay más tareas disponibles para añadir como predecesora.');
-      return;
-    }
-
-    setDependencies([
-      ...dependencies,
-      { predecessorId: available[0].id, type: 'FC', lag: 0 },
+    setDependencies(prev => [
+      ...prev,
+      {
+        predecessorId: availableTasks[0].id,
+        type: 'FC',
+        lag: 0,
+      },
     ]);
-    setValidationError(null);
+  };
+
+  const handleRemoveDependency = (index: number) => {
+    setDependencies(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleUpdateDependency = (
@@ -69,206 +75,221 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     field: keyof Dependency,
     value: string | number
   ) => {
-    const updated = [...dependencies];
-    updated[index] = {
-      ...updated[index],
-      [field]: value,
-    };
-    setDependencies(updated);
-  };
-
-  const handleRemoveDependency = (index: number) => {
-    setDependencies(dependencies.filter((_, i) => i !== index));
+    setDependencies(prev =>
+      prev.map((d, i) => {
+        if (i === index) {
+          return { ...d, [field]: value };
+        }
+        return d;
+      })
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!id.trim()) {
-      setValidationError('El identificador (ID) de la tarea es obligatorio.');
+      setValidationError('El código ID de la tarea es obligatorio.');
       return;
     }
+
     if (!name.trim()) {
-      setValidationError('El nombre descriptivo de la tarea es obligatorio.');
+      setValidationError('El nombre de la actividad es obligatorio.');
       return;
     }
+
     if (duration <= 0) {
-      setValidationError('La duración debe ser un valor positivo mayor que cero.');
+      setValidationError('La duración de la tarea debe ser un número entero positivo.');
       return;
     }
 
     if (!taskToEdit && allTasks.some(t => t.id.toLowerCase() === id.trim().toLowerCase())) {
-      setValidationError(`Ya existe una tarea con el identificador "${id}".`);
+      setValidationError(`Ya existe una tarea con el ID "${id}". Elige un código diferente.`);
       return;
     }
 
-    onSave({
+    const savedTask: Task = {
       id: id.trim(),
       name: name.trim(),
-      duration: Number(duration),
+      duration: Math.round(duration),
       departmentId,
       dependencies,
-      position: taskToEdit?.position,
-    });
+    };
+
+    onSave(savedTask);
     onClose();
   };
 
   const availablePredecessors = allTasks.filter(t => t.id !== id);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/60">
-          <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base">
-              {taskToEdit ? `Editar Tarea: ${taskToEdit.id}` : 'Crear Nueva Tarea ROY'}
-            </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                {taskToEdit ? `Editar Tarea: ${taskToEdit.id}` : 'Crear Nueva Actividad ROY'}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Parámetros temporales y ligaduras del método de los potenciales
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 flex-1">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
           {validationError && (
-            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium">
+            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 font-semibold">
               {validationError}
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Identificador (ID):
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-1">
+              <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
+                ID / Código *
               </label>
               <input
                 type="text"
                 value={id}
                 onChange={e => setId(e.target.value)}
-                placeholder="Ej. T01, A, PROC-01"
                 disabled={!!taskToEdit}
-                className="w-full px-3 py-1.5 text-xs font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-hidden disabled:opacity-60"
+                placeholder="ej: T01"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
+
+            <div className="col-span-2">
+              <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
+                Nombre de la Actividad *
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="ej: Simulación de Columnas de Fraccionamiento C4"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-slate-400" /> Duración (meses / u.):
+              <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                Duración (meses) *
               </label>
               <input
                 type="number"
-                step="0.5"
-                min="0.5"
+                min="1"
+                step="1"
                 value={duration}
-                onChange={e => setDuration(parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-1.5 text-xs font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                onChange={e => setDuration(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Nombre de la Actividad / Entregable:
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Ej. Especificaciones de Proceso y Balance de Materia"
-              className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" /> Departamento Responsable (Oficina Técnica):
-            </label>
-            <select
-              value={departmentId}
-              onChange={e => setDepartmentId(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-            >
-              {PILPIS_DEPARTMENTS.map(d => (
-                <option key={d.id} value={d.id}>
-                  {d.code} — {d.name}
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                Equipo / Departamento
+              </label>
+              <select
+                value={departmentId}
+                onChange={e => setDepartmentId(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+              >
+                {departments.map(d => (
+                  <option key={d.id} value={d.id}>
+                    {d.code} — {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Link2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Predecesoras y Ligaduras de Roy:
+              <label className="text-slate-700 dark:text-slate-300 font-bold flex items-center gap-1.5">
+                <Link2 className="w-3.5 h-3.5 text-slate-400" />
+                Predecesoras y Ligaduras de Potencial ({dependencies.length})
               </label>
               <button
                 type="button"
                 onClick={handleAddDependency}
-                className="text-xs flex items-center gap-1 px-2 py-1 rounded bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-medium transition-colors"
+                disabled={availablePredecessors.length === dependencies.length}
+                className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-semibold flex items-center gap-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Plus className="w-3.5 h-3.5" /> Añadir Ligadura
+                <Plus className="w-3.5 h-3.5" />
+                <span>Añadir Ligadura</span>
               </button>
             </div>
 
             {dependencies.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-2 text-center bg-slate-50 dark:bg-slate-800/40 rounded-lg">
-                Esta tarea no tiene predecesoras (iniciará en t = 0 o enlazada al nodo Inicio).
-              </p>
+              <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-slate-500 dark:text-slate-400 italic">
+                Esta actividad es inicial (no tiene predecesoras y comenzará en el mes 0).
+              </div>
             ) : (
               <div className="space-y-2">
-                {dependencies.map((dep, index) => (
+                {dependencies.map((dep, idx) => (
                   <div
-                    key={index}
-                    className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 flex items-center gap-2 text-xs"
+                    key={idx}
+                    className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 flex items-center gap-2"
                   >
-                    <div className="flex-1">
-                      <select
-                        value={dep.predecessorId}
-                        onChange={e => handleUpdateDependency(index, 'predecessorId', e.target.value)}
-                        className="w-full px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono"
-                      >
-                        {availablePredecessors.map(p => (
-                          <option key={p.id} value={p.id}>
-                            [{p.id}] {p.name.slice(0, 30)}...
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <select
+                      value={dep.predecessorId}
+                      onChange={e => handleUpdateDependency(idx, 'predecessorId', e.target.value)}
+                      className="flex-1 px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono font-semibold"
+                    >
+                      {availablePredecessors.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.id} — {t.name}
+                        </option>
+                      ))}
+                    </select>
 
-                    <div className="w-24">
-                      <select
-                        value={dep.type}
-                        onChange={e => handleUpdateDependency(index, 'type', e.target.value as DependencyType)}
-                        className="w-full px-1.5 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-slate-800 dark:text-slate-200"
-                        title="Tipo de ligadura de potencial de Roy"
-                      >
-                        <option value="FC">FC (Fin-Com.)</option>
-                        <option value="CC">CC (Com.-Com.)</option>
-                        <option value="FF">FF (Fin-Fin)</option>
-                        <option value="CF">CF (Com.-Fin)</option>
-                      </select>
-                    </div>
+                    <select
+                      value={dep.type}
+                      onChange={e =>
+                        handleUpdateDependency(idx, 'type', e.target.value as DependencyType)
+                      }
+                      className="w-20 px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono font-bold text-center"
+                      title="Tipo de ligadura: FC (Fin-Comienzo), CC (Comienzo-Comienzo), FF (Fin-Fin), CF (Comienzo-Fin)"
+                    >
+                      <option value="FC">FC</option>
+                      <option value="CC">CC</option>
+                      <option value="FF">FF</option>
+                      <option value="CF">CF</option>
+                    </select>
 
-                    <div className="w-20">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-slate-400 font-mono">lag:</span>
                       <input
                         type="number"
-                        step="0.5"
                         value={dep.lag}
-                        onChange={e => handleUpdateDependency(index, 'lag', parseFloat(e.target.value) || 0)}
-                        placeholder="Lag"
-                        className="w-full px-2 py-1 text-xs text-center font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-                        title="Desfase / retardo temporal (positivo o negativo)"
+                        onChange={e =>
+                          handleUpdateDependency(idx, 'lag', parseInt(e.target.value) || 0)
+                        }
+                        className="w-14 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-center font-bold"
+                        title="Retardo o desfase en meses (+ positivo para espera, - negativo para adelanto)"
                       />
                     </div>
 
                     <button
                       type="button"
-                      onClick={() => handleRemoveDependency(index)}
-                      className="p-1 text-slate-400 hover:text-red-600 transition-colors"
-                      title="Eliminar ligadura"
+                      onClick={() => handleRemoveDependency(idx)}
+                      className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                      title="Quitar ligadura"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -283,30 +304,34 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm(`¿Eliminar la tarea ${taskToEdit.id}: ${taskToEdit.name}?`)) {
+                  if (confirm(`¿Estás seguro de eliminar la tarea ${taskToEdit.id}?`)) {
                     onDelete(taskToEdit.id);
                     onClose();
                   }
                 }}
-                className="px-3 py-1.5 text-xs rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 flex items-center gap-1 transition-colors font-medium"
+                className="px-3 py-1.5 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 font-semibold transition-colors flex items-center gap-1.5"
               >
-                <Trash2 className="w-4 h-4" /> Eliminar Tarea
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Eliminar Tarea</span>
               </button>
-            ) : <div />}
+            ) : (
+              <div />
+            )}
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 text-xs rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition-all"
               >
-                <Save className="w-4 h-4" /> Guardar Tarea
+                <Save className="w-3.5 h-3.5" />
+                <span>Guardar Actividad</span>
               </button>
             </div>
           </div>
