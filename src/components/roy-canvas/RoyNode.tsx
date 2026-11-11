@@ -38,56 +38,88 @@ export const RoyNode = memo(({ data, selected }: NodeProps) => {
         maxWidth: viewMode === 'full' ? '300px' : '220px',
       }}
     >
-      {/* Conectores de Entrada (Target): 3 alturas en lateral izquierdo (Superior 25%, Centro 50%, Inferior 75%) */}
+      {/* Conectores de Entrada (Target): Invisibles por defecto, se iluminan al pasar el ratón por el contorno */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left-target-1"
+        style={{ top: '15%' }}
+        className="opacity-0 group-hover:opacity-90 hover:!opacity-100 !w-3 !h-3 !rounded-full !bg-emerald-500 hover:!bg-emerald-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-all duration-150 cursor-crosshair z-20"
+        title="Entrada Muy Alta (15%): Conexión superior"
+      />
       <Handle
         type="target"
         position={Position.Left}
         id="left-target-top"
-        style={{ top: '25%' }}
-        className="!w-3 !h-3 !bg-emerald-500 hover:!bg-emerald-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-transform cursor-crosshair z-20"
-        title="Entrada Superior (25%): Conecta aquí para ligaduras altas"
+        style={{ top: '32%' }}
+        className="opacity-0 group-hover:opacity-90 hover:!opacity-100 !w-3 !h-3 !rounded-full !bg-emerald-500 hover:!bg-emerald-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-all duration-150 cursor-crosshair z-20"
+        title="Entrada Alta (32%): Conecta aquí para ligaduras altas"
       />
       <Handle
         type="target"
         position={Position.Left}
         id="left-target-mid"
         style={{ top: '50%' }}
-        className="!w-3.5 !h-3.5 !bg-emerald-500 hover:!bg-emerald-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-transform cursor-crosshair z-20"
+        className="opacity-0 group-hover:opacity-90 hover:!opacity-100 !w-3.5 !h-3.5 !rounded-full !bg-emerald-500 hover:!bg-emerald-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-all duration-150 cursor-crosshair z-20"
         title="Entrada Central (50%): Conector principal de entrada"
       />
       <Handle
         type="target"
         position={Position.Left}
         id="left-target-bot"
-        style={{ top: '75%' }}
-        className="!w-3 !h-3 !bg-emerald-500 hover:!bg-emerald-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-transform cursor-crosshair z-20"
-        title="Entrada Inferior (75%): Conecta aquí para ligaduras bajas"
+        style={{ top: '68%' }}
+        className="opacity-0 group-hover:opacity-90 hover:!opacity-100 !w-3 !h-3 !rounded-full !bg-emerald-500 hover:!bg-emerald-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-all duration-150 cursor-crosshair z-20"
+        title="Entrada Baja (68%): Conecta aquí para ligaduras bajas"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left-target-5"
+        style={{ top: '85%' }}
+        className="opacity-0 group-hover:opacity-90 hover:!opacity-100 !w-3 !h-3 !rounded-full !bg-emerald-500 hover:!bg-emerald-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-all duration-150 cursor-crosshair z-20"
+        title="Entrada Muy Baja (85%): Conexión inferior"
       />
 
-      {/* Conectores de Salida (Source): 3 alturas en lateral derecho (Superior 25%, Centro 50%, Inferior 75%) */}
+      {/* Conectores de Salida (Source): Invisibles por defecto, se iluminan al pasar el ratón por el contorno */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right-source-1"
+        style={{ top: '15%' }}
+        className="opacity-0 group-hover:opacity-90 hover:!opacity-100 !w-3 !h-3 !rounded-full !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-all duration-150 cursor-crosshair z-20"
+        title="Salida Muy Alta (15%): Conexión superior"
+      />
       <Handle
         type="source"
         position={Position.Right}
         id="right-source-top"
-        style={{ top: '25%' }}
-        className="!w-3 !h-3 !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-transform cursor-crosshair z-20"
-        title="Salida Superior (25%): Arrastra hacia una tarea sucesora para ligaduras altas"
+        style={{ top: '32%' }}
+        className="opacity-0 group-hover:opacity-90 hover:!opacity-100 !w-3 !h-3 !rounded-full !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-all duration-150 cursor-crosshair z-20"
+        title="Salida Alta (32%): Arrastra hacia una sucesora para ligaduras altas"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="right-source-mid"
         style={{ top: '50%' }}
-        className="!w-3.5 !h-3.5 !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-transform cursor-crosshair z-20"
+        className="opacity-0 group-hover:opacity-90 hover:!opacity-100 !w-3.5 !h-3.5 !rounded-full !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-all duration-150 cursor-crosshair z-20"
         title="Salida Central (50%): Conector principal de salida"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="right-source-bot"
-        style={{ top: '75%' }}
-        className="!w-3 !h-3 !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-transform cursor-crosshair z-20"
-        title="Salida Inferior (75%): Arrastra hacia una tarea sucesora para ligaduras bajas"
+        style={{ top: '68%' }}
+        className="opacity-0 group-hover:opacity-90 hover:!opacity-100 !w-3 !h-3 !rounded-full !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-all duration-150 cursor-crosshair z-20"
+        title="Salida Baja (68%): Arrastra hacia una sucesora para ligaduras bajas"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right-source-5"
+        style={{ top: '85%' }}
+        className="opacity-0 group-hover:opacity-90 hover:!opacity-100 !w-3 !h-3 !rounded-full !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-all duration-150 cursor-crosshair z-20"
+        title="Salida Muy Baja (85%): Conexión inferior"
       />
 
       {/* Cabecera de la Actividad */}

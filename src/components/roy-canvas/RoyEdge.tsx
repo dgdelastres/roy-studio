@@ -32,6 +32,7 @@ export const RoyEdge = memo(({
   style = {},
   markerEnd,
   data,
+  selected,
 }: EdgeProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDraggingBend, setIsDraggingBend] = useState(false);
@@ -119,12 +120,13 @@ export const RoyEdge = memo(({
   const lagString = lag !== 0 ? (lag > 0 ? `+${lag}` : `${lag}`) : '';
   const labelText = `${relType}${lagString ? ' ' + lagString : ''}`;
 
-  const normalStroke = (isHovered || isDraggingBend) ? '#2563EB' : '#475569';
-  const criticalStroke = (isHovered || isDraggingBend) ? '#B91C1C' : '#DC2626';
+  const isHighlighted = isHovered || isDraggingBend || selected;
+  const normalStroke = isHighlighted ? '#2563EB' : '#475569';
+  const criticalStroke = isHighlighted ? '#B91C1C' : '#DC2626';
   const activeStroke = isCritical ? criticalStroke : (style.stroke || normalStroke);
   const strokeWidth = isCritical
-    ? (isHovered || isDraggingBend ? 4.2 : 3.2)
-    : (isHovered || isDraggingBend ? 3.2 : 2.2);
+    ? (isHighlighted ? 4.5 : 3.2)
+    : (isHighlighted ? 3.5 : 2.2);
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -172,7 +174,7 @@ export const RoyEdge = memo(({
 
   return (
     <g
-      className="roy-edge-group group cursor-pointer"
+      className={`roy-edge-group group cursor-pointer ${selected ? 'selected' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onDoubleClick={handleDoubleClick}
@@ -183,7 +185,7 @@ export const RoyEdge = memo(({
         d={edgePath}
         fill="none"
         stroke="transparent"
-        strokeWidth={20}
+        strokeWidth={24}
         className="cursor-pointer"
       />
 
@@ -196,6 +198,9 @@ export const RoyEdge = memo(({
           ...style,
           stroke: activeStroke,
           strokeWidth,
+          filter: selected
+            ? (isCritical ? 'drop-shadow(0 0 5px rgba(220,38,38,0.75))' : 'drop-shadow(0 0 5px rgba(37,99,235,0.75))')
+            : undefined,
           transition: isDraggingBend ? 'none' : 'stroke 0.15s ease, stroke-width 0.15s ease',
         }}
       />
@@ -218,7 +223,7 @@ export const RoyEdge = memo(({
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'all',
-            zIndex: (isHovered || isDraggingBend) ? 60 : (isCritical ? 30 : 10),
+            zIndex: (isHovered || isDraggingBend || selected) ? 60 : (isCritical ? 30 : 10),
           }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -228,19 +233,19 @@ export const RoyEdge = memo(({
           <div
             onDoubleClick={handleDoubleClick}
             className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-tight shadow-sm border select-none transition-all duration-150 cursor-pointer ${
-              (isHovered || isDraggingBend) ? 'scale-105 shadow-lg ring-2 ring-blue-500' : ''
+              (isHovered || isDraggingBend || selected) ? 'scale-105 shadow-lg ring-2 ring-blue-500' : ''
             } ${
               isCritical
                 ? 'bg-red-600 text-white border-red-700 shadow-red-500/20'
                 : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-400 dark:border-slate-600'
             }`}
-            title={`Ligadura: ${relType} con retardo ${lag} meses (Haz doble clic para editar o eliminar)`}
+            title={`Ligadura: ${relType} con retardo ${lag} meses (Pulsa Supr para eliminar o doble clic para editar)`}
           >
             {labelText}
           </div>
 
           {/* Tirador arrastrable para ajustar el quiebre/bloqueo de la ligadura */}
-          {(isHovered || isDraggingBend || customCenterX !== undefined || customCenterY !== undefined) && (
+          {(isHovered || isDraggingBend || selected || customCenterX !== undefined || customCenterY !== undefined) && (
             <div
               onPointerDown={handlePointerDownBend}
               onPointerMove={handlePointerMoveBend}
