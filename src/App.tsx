@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Task, DependencyType, Department } from './core/roy-engine/types';
+import type { Edge, Connection } from '@xyflow/react';
+import { Task, Dependency, DependencyType, Department } from './core/roy-engine/types';
 import { calculateRoy } from './core/roy-engine/calculator';
 import { PILPIS_PROJECT_TASKS } from './templates/pilpisProject';
 import { PILPIS_DEPARTMENTS } from './theme/departments';
@@ -33,6 +34,7 @@ export const App: React.FC = () => {
 
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [edgeToEdit, setEdgeToEdit] = useState<EdgeEditData | null>(null);
+  const [newTaskPosition, setNewTaskPosition] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (isDark) {
@@ -69,9 +71,14 @@ export const App: React.FC = () => {
       if (exists) {
         return prev.map(t => (t.id === savedTask.id ? savedTask : t));
       } else {
-        return [...prev, savedTask];
+        const taskWithPos: Task = {
+          ...savedTask,
+          position: savedTask.position || newTaskPosition || undefined,
+        };
+        return [...prev, taskWithPos];
       }
     });
+    setNewTaskPosition(null);
   };
 
   const handleDeleteTask = (taskId: string) => {
@@ -177,6 +184,55 @@ export const App: React.FC = () => {
         return t;
       })
     );
+  };
+
+  // Desplazamiento y reconexión interactiva de extremos de ligaduras en el contorno (Punto 4)
+  const handleReconnectDependency = (oldEdge: Edge, newConnection: Connection) => {
+    const oldPredecessorId = oldEdge.source;
+    const oldTargetId = oldEdge.target;
+    const newPredecessorId = newConnection.source;
+    const newTargetId = newConnection.target;
+    if (!newPredecessorId || !newTargetId) return;
+
+    const newSourceHandle = newConnection.sourceHandle || undefined;
+    const newTargetHandle = newConnection.targetHandle || undefined;
+
+    setTasks(prev => {
+      let existingDep: Dependency | undefined;
+      const oldTargetTask = prev.find(t => t.id === oldTargetId);
+      if (oldTargetTask) {
+        existingDep = oldTargetTask.dependencies.find(d => d.predecessorId === oldPredecessorId);
+      }
+      const depType: DependencyType = existingDep?.type || 'FC';
+      const depLag: number = existingDep?.lag || 0;
+
+      return prev.map(task => {
+        if (task.id === oldTargetId && (oldTargetId !== newTargetId || oldPredecessorId !== newPredecessorId)) {
+          return {
+            ...task,
+            dependencies: task.dependencies.filter(d => d.predecessorId !== oldPredecessorId),
+          };
+        }
+        if (task.id === newTargetId) {
+          const currentDeps = task.dependencies.filter(
+            d => d.predecessorId !== (oldTargetId === newTargetId ? oldPredecessorId : '')
+          );
+          const filtered = currentDeps.filter(d => d.predecessorId !== newPredecessorId);
+          filtered.push({
+            predecessorId: newPredecessorId,
+            type: depType,
+            lag: depLag,
+            sourceHandle: newSourceHandle,
+            targetHandle: newTargetHandle,
+          });
+          return {
+            ...task,
+            dependencies: filtered,
+          };
+        }
+        return task;
+      });
+    });
   };
 
   const handleLoadPilpisTemplate = () => {
@@ -285,10 +341,14 @@ export const App: React.FC = () => {
               setTaskToEdit(task);
               setIsModalOpen(true);
             }}
-            onAddTask={() => {
+            onAddTask={(initialPos) => {
               setTaskToEdit(null);
+              setNewTaskPosition(initialPos || null);
               setIsModalOpen(true);
             }}
+            onDeleteTask={handleDeleteTask}
+            onDeleteDependency={handleDeleteDependency}
+            onReconnectDependency={handleReconnectDependency}
             onAddDependency={handleAddDependency}
             onEditDependency={handleEditDependency}
             hasCycle={calculation.hasCycle}

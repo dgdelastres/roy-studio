@@ -41,7 +41,10 @@ interface RoyCanvasProps {
   departments?: Department[];
   isActive?: boolean;
   onEditTask: (task: Task) => void;
-  onAddTask?: () => void;
+  onAddTask?: (initialPosition?: { x: number; y: number }) => void;
+  onDeleteTask?: (taskId: string) => void;
+  onDeleteDependency?: (targetId: string, predecessorId: string) => void;
+  onReconnectDependency?: (oldEdge: Edge, newConnection: Connection) => void;
   onAddDependency: (
     targetId: string,
     predecessorId: string,
@@ -115,15 +118,55 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
   isActive = true,
   onEditTask,
   onAddTask,
+  onDeleteTask,
+  onDeleteDependency,
+  onReconnectDependency,
   onAddDependency,
   onEditDependency,
   hasCycle,
   cyclePath,
 }) => {
-  const { fitView, zoomIn, zoomOut, setViewport } = useReactFlow();
+  const { fitView, zoomIn, zoomOut, setViewport, screenToFlowPosition } = useReactFlow();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [edgeCenterXs, setEdgeCenterXs] = useState<Record<string, number>>({});
   const [edgeCenterYs, setEdgeCenterYs] = useState<Record<string, number>>({});
+
+  // Borrado directo de ligaduras con tecla Supr / Backspace
+  const handleEdgesDelete = useCallback(
+    (deletedEdges: Edge[]) => {
+      deletedEdges.forEach(edge => {
+        onDeleteDependency?.(edge.target, edge.source);
+      });
+    },
+    [onDeleteDependency]
+  );
+
+  // Borrado directo de tareas con tecla Supr / Backspace
+  const handleNodesDelete = useCallback(
+    (deletedNodes: Node[]) => {
+      deletedNodes.forEach(node => {
+        onDeleteTask?.(node.id);
+      });
+    },
+    [onDeleteTask]
+  );
+
+  // Desplazamiento interactivo de conexiones en el contorno (Reconexión de extremos)
+  const handleReconnect = useCallback(
+    (oldEdge: Edge, newConnection: Connection) => {
+      if (!newConnection.source || !newConnection.target) return;
+      if (newConnection.source === newConnection.target) return;
+      if (
+        (oldEdge.source !== newConnection.source || oldEdge.target !== newConnection.target) &&
+        wouldCreateCycle(tasks, newConnection.source, newConnection.target)
+      ) {
+        alert('¡Acción no permitida! Mover esta ligadura generaría un bucle circular en la red ROY.');
+        return;
+      }
+      onReconnectDependency?.(oldEdge, newConnection);
+    },
+    [tasks, onReconnectDependency]
+  );
 
   // Cerrar el menú contextual al hacer clic fuera o pulsar Escape
   useEffect(() => {
@@ -220,6 +263,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
           sourceHandle,
           targetHandle,
           type: 'royEdge',
+          reconnectable: true,
           data: {
             type: dep.type,
             lag: dep.lag,
@@ -374,12 +418,18 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
   // Manejador de click derecho sobre el lienzo
   const handlePaneContextMenu = useCallback((event: MouseEvent | React.MouseEvent) => {
     event.preventDefault();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setContextMenu({ x: event.clientX, y: event.clientY });
   }, []);
 
   // Manejador de click derecho sobre nodos
   const handleNodeContextMenu = useCallback((event: MouseEvent | React.MouseEvent, _node?: Node) => {
     event.preventDefault();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setContextMenu({ x: event.clientX, y: event.clientY });
   }, []);
 
@@ -430,6 +480,12 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         onNodeContextMenu={handleNodeContextMenu}
         onPaneClick={() => setContextMenu(null)}
         isValidConnection={isValidConnection}
+        deleteKeyCode={['Backspace', 'Delete']}
+        onEdgesDelete={handleEdgesDelete}
+        onNodesDelete={handleNodesDelete}
+        edgesReconnectable={true}
+        reconnectRadius={28}
+        onReconnect={handleReconnect}
         connectionLineStyle={{ stroke: '#2563EB', strokeWidth: 2.5 }}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -507,13 +563,22 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
           {onAddTask && (
             <div className="py-1">
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const clickX = contextMenu.x;
+                  const clickY = contextMenu.y;
                   setContextMenu(null);
                   if (document.activeElement instanceof HTMLElement) {
                     document.activeElement.blur();
                   }
+                  window.focus();
+                  const flowPos = screenToFlowPosition({ x: clickX, y: clickY });
+                  const pos = {
+                    x: Math.round(flowPos.x - 140),
+                    y: Math.round(flowPos.y - 70),
+                  };
                   setTimeout(() => {
-                    onAddTask();
+                    onAddTask(pos);
                   }, 40);
                 }}
                 className="w-full px-3 py-1.5 text-left text-slate-800 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2 cursor-pointer font-medium transition-colors"
