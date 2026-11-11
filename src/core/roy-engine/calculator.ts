@@ -89,6 +89,27 @@ export function detectCycles(tasks: Task[]): { hasCycle: boolean; cyclePath?: st
 }
 
 /**
+ * Comprueba preventivamente si añadir una ligadura (predecessorId -> targetId) crearía un ciclo en el grafo.
+ */
+export function wouldCreateCycle(tasks: Task[], predecessorId: string, targetId: string): boolean {
+  if (predecessorId === targetId) return true;
+
+  const simulatedTasks = tasks.map(t => {
+    if (t.id === targetId) {
+      const alreadyHas = t.dependencies.some(d => d.predecessorId === predecessorId);
+      if (alreadyHas) return t;
+      return {
+        ...t,
+        dependencies: [...t.dependencies, { predecessorId, type: 'FC' as DependencyType, lag: 0 }],
+      };
+    }
+    return t;
+  });
+
+  return detectCycles(simulatedTasks).hasCycle;
+}
+
+/**
  * Ordenación topológica de las tareas (de predecesoras a sucesoras).
  */
 export function topologicalSort(tasks: Task[]): { sorted: string[]; hasCycle: boolean } {

@@ -38,69 +38,22 @@ export const RoyNode = memo(({ data, selected }: NodeProps) => {
         maxWidth: viewMode === 'full' ? '300px' : '220px',
       }}
     >
-      {/* 4 Nodos de Conexión Bidireccionales (Haz click y arrastra para crear ligaduras) */}
-      {/* NODO IZQUIERDO */}
+      {/* Conector de Entrada (Target): Solo en la izquierda (flujo izq -> der) */}
       <Handle
         type="target"
         position={Position.Left}
         id="left-target"
-        className="!w-3.5 !h-3.5 !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-xs transition-transform cursor-crosshair z-20"
-        title="Nodo Izquierdo: Arrastra hasta otra tarea o suelta aquí para conectar"
-      />
-      <Handle
-        type="source"
-        position={Position.Left}
-        id="left-source"
-        className="!w-3.5 !h-3.5 !bg-transparent !border-0 cursor-crosshair z-20"
-        title="Nodo Izquierdo: Arrastra hasta otra tarea o suelta aquí para conectar"
+        className="!w-3.5 !h-3.5 !bg-emerald-500 hover:!bg-emerald-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-transform cursor-crosshair z-20"
+        title="Entrada (Sucesora): Conecta aquí desde la salida derecha de la tarea predecesora"
       />
 
-      {/* NODO DERECHO */}
+      {/* Conector de Salida (Source): Solo en la derecha (flujo izq -> der) */}
       <Handle
         type="source"
         position={Position.Right}
         id="right-source"
-        className="!w-3.5 !h-3.5 !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-xs transition-transform cursor-crosshair z-20"
-        title="Nodo Derecho: Arrastra hasta otra tarea o suelta aquí para conectar"
-      />
-      <Handle
-        type="target"
-        position={Position.Right}
-        id="right-target"
-        className="!w-3.5 !h-3.5 !bg-transparent !border-0 cursor-crosshair z-20"
-        title="Nodo Derecho: Arrastra hasta otra tarea o suelta aquí para conectar"
-      />
-
-      {/* NODO SUPERIOR */}
-      <Handle
-        type="target"
-        position={Position.Top}
-        id="top-target"
-        className="!w-3 !h-3 !bg-blue-500 hover:!bg-blue-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 opacity-70 group-hover:opacity-100 shadow-xs transition-transform cursor-crosshair z-20"
-        title="Nodo Superior: Arrastra hasta otra tarea o suelta aquí para conectar"
-      />
-      <Handle
-        type="source"
-        position={Position.Top}
-        id="top-source"
-        className="!w-3 !h-3 !bg-transparent !border-0 cursor-crosshair z-20"
-        title="Nodo Superior: Arrastra hasta otra tarea o suelta aquí para conectar"
-      />
-
-      {/* NODO INFERIOR */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="bottom-source"
-        className="!w-3 !h-3 !bg-blue-500 hover:!bg-blue-600 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 opacity-70 group-hover:opacity-100 shadow-xs transition-transform cursor-crosshair z-20"
-        title="Nodo Inferior: Arrastra hasta otra tarea o suelta aquí para conectar"
-      />
-      <Handle
-        type="target"
-        position={Position.Bottom}
-        id="bottom-target"
-        className="!w-3 !h-3 !bg-transparent !border-0 cursor-crosshair z-20"
-        title="Nodo Inferior: Arrastra hasta otra tarea o suelta aquí para conectar"
+        className="!w-3.5 !h-3.5 !bg-blue-600 hover:!bg-blue-700 hover:!scale-125 !border-2 !border-white dark:!border-slate-900 shadow-md transition-transform cursor-crosshair z-20"
+        title="Salida (Predecesora): Arrastra hacia la izquierda de otra tarea para crear una ligadura"
       />
 
       {/* Cabecera de la Actividad */}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateRoy, getCanonicalLag } from './calculator';
+import { calculateRoy, getCanonicalLag, wouldCreateCycle } from './calculator';
 import { Task } from './types';
 
 describe('Roy Engine - Canonical Lag Calculations', () => {
@@ -143,5 +143,22 @@ describe('Roy Engine - Network Calculations & Critical Path', () => {
     expect(result.criticalTasks.length).toBeGreaterThan(0);
     expect(result.criticalTasks).toContain('T01');
     expect(result.criticalTasks).toContain('T26');
+  });
+
+  it('prevents cycle creation with wouldCreateCycle', () => {
+    const tasks: Task[] = [
+      { id: 'T01', name: 'Tarea 1', duration: 2, departmentId: 'D1', dependencies: [] },
+      { id: 'T02', name: 'Tarea 2', duration: 3, departmentId: 'D1', dependencies: [{ predecessorId: 'T01', type: 'FC', lag: 0 }] },
+      { id: 'T03', name: 'Tarea 3', duration: 4, departmentId: 'D1', dependencies: [{ predecessorId: 'T02', type: 'FC', lag: 0 }] },
+    ];
+
+    // Self loop: T01 -> T01
+    expect(wouldCreateCycle(tasks, 'T01', 'T01')).toBe(true);
+    // Reverse connection creating cycle: T03 -> T01 (since T01 -> T02 -> T03)
+    expect(wouldCreateCycle(tasks, 'T03', 'T01')).toBe(true);
+    // Reverse connection creating cycle: T02 -> T01 (since T01 -> T02)
+    expect(wouldCreateCycle(tasks, 'T02', 'T01')).toBe(true);
+    // Valid new forward connection: T01 -> T03
+    expect(wouldCreateCycle(tasks, 'T01', 'T03')).toBe(false);
   });
 });

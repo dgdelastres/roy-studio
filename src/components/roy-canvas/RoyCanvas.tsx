@@ -17,6 +17,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { Task, DependencyType, Department } from '../../core/roy-engine/types';
+import { wouldCreateCycle } from '../../core/roy-engine/calculator';
 import { RoyNode } from './RoyNode';
 import { RoyEdge } from './RoyEdge';
 import { getLayoutedElements, LayoutDirection } from './layout';
@@ -71,6 +72,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
 }) => {
   const { fitView, zoomIn, zoomOut, setViewport } = useReactFlow();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [edgeCenterXs, setEdgeCenterXs] = useState<Record<string, number>>({});
 
   // Cerrar el menú contextual al hacer clic fuera o pulsar Escape
   useEffect(() => {
@@ -87,7 +89,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
     };
   }, []);
 
-  // Ajustar la vista automáticamente cuando se vuelve a activar la pestaña "Red ROY" (Punto 3)
+  // Ajustar la vista suavemente cuando se vuelve a activar la pestaña "Red ROY"
   useEffect(() => {
     if (isActive) {
       const timer = setTimeout(() => {
@@ -103,6 +105,18 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
     },
     [criticalEdges]
   );
+
+  const handleUpdateEdgeCenterX = useCallback((edgeId: string, newX: number | undefined) => {
+    setEdgeCenterXs(prev => {
+      const next = { ...prev };
+      if (newX === undefined) {
+        delete next[edgeId];
+      } else {
+        next[edgeId] = newX;
+      }
+      return next;
+    });
+  }, []);
 
   const initialNodes: Node[] = useMemo(() => {
     return tasks.map(task => ({
@@ -122,17 +136,22 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
     const edgesList: Edge[] = [];
     tasks.forEach(task => {
       task.dependencies.forEach(dep => {
+        const edgeId = `e-${dep.predecessorId}-${task.id}`;
         const critical = isCriticalEdge(dep.predecessorId, task.id);
         edgesList.push({
-          id: `e-${dep.predecessorId}-${task.id}`,
+          id: edgeId,
           source: dep.predecessorId,
           target: task.id,
+          sourceHandle: 'right-source',
+          targetHandle: 'left-target',
           type: 'royEdge',
           data: {
             type: dep.type,
             lag: dep.lag,
             isCritical: critical,
+            customCenterX: edgeCenterXs[edgeId],
             onDoubleClick: () => onEditDependency?.(task.id, dep.predecessorId, dep.type, dep.lag),
+            onUpdateCenterX: (newX: number | undefined) => handleUpdateEdgeCenterX(edgeId, newX),
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
@@ -144,15 +163,68 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
       });
     });
     return edgesList;
-  }, [tasks, isCriticalEdge, onEditDependency]);
+  }, [tasks, isCriticalEdge, onEditDependency, edgeCenterXs, handleUpdateEdgeCenterX]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  // Sincronización reactiva inmediata de nodos en pantalla ante cualquier cambio de datos (Punto 3)
+  useEffect(() => {
+    setNodes((currentNodes) => {
+      if (currentNodes.length === 0) {
+        const { nodes: layoutedNodes } = getLayoutedElements(
+          initialNodes,
+          initialEdges,
+          direction,
+          viewMode
+        );
+        return layoutedNodes;
+      }
+
+      const nodeMap = new Map(currentNodes.map(n => [n.id, n]));
+      return tasks.map(task => {
+        const existingNode = nodeMap.get(task.id);
+        const position = existingNode?.position || task.position || {
+          x: (currentNodes.length % 5) * 320,
+          y: Math.floor(currentNodes.length / 5) * 180,
+        };
+
+        return {
+          id: task.id,
+          type: 'royNode',
+          position,
+          data: {
+            task,
+            viewMode,
+            onEdit: onEditTask,
+            departments,
+          },
+        };
+      });
+    });
+  }, [tasks, viewMode, onEditTask, departments, setNodes]);
+
+  // Sincronización reactiva inmediata de aristas (Punto 3)
+  useEffect(() => {
+    setEdges(initialEdges);
+  }, [initialEdges, setEdges]);
+
+  // Auto-organización con algoritmo Dagre
   const applyLayout = useCallback(
     (dir: LayoutDirection = direction) => {
+      const freshNodes: Node[] = tasks.map(task => ({
+        id: task.id,
+        type: 'royNode',
+        position: { x: 0, y: 0 },
+        data: {
+          task,
+          viewMode,
+          onEdit: onEditTask,
+          departments,
+        },
+      }));
       const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-        initialNodes,
+        freshNodes,
         initialEdges,
         dir,
         viewMode
@@ -160,21 +232,38 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
     },
-    [initialNodes, initialEdges, direction, viewMode, setNodes, setEdges]
+    [tasks, initialEdges, direction, viewMode, onEditTask, departments, setNodes, setEdges]
   );
 
-  useEffect(() => {
-    applyLayout(direction);
-  }, [tasks.length, direction, viewMode]);
+  // Validación estricta de conexiones (Punto 1):
+  // 1. Salida solo por la derecha (right-source)
+  // 2. Entrada solo por la izquierda (left-target)
+  // 3. Flujo natural izquierda -> derecha (predecesora a la izq, sucesora a la der)
+  // 4. Bloqueo preventivo de bucles circulares (wouldCreateCycle)
+  const isValidConnection = useCallback(
+    (edgeOrConnection: Edge | Connection) => {
+      if (!edgeOrConnection.source || !edgeOrConnection.target) return false;
+      if (edgeOrConnection.source === edgeOrConnection.target) return false;
+      if (edgeOrConnection.sourceHandle && edgeOrConnection.sourceHandle !== 'right-source') return false;
+      if (edgeOrConnection.targetHandle && edgeOrConnection.targetHandle !== 'left-target') return false;
+      if (wouldCreateCycle(tasks, edgeOrConnection.source, edgeOrConnection.target)) return false;
+      return true;
+    },
+    [tasks]
+  );
 
-  // Arrastre entre conectores para crear ligadura (Punto 2)
   const handleConnect = useCallback(
     (params: Connection) => {
-      if (params.source && params.target && params.source !== params.target) {
-        onAddDependency(params.target, params.source, 'FC', 0);
+      if (!params.source || !params.target || params.source === params.target) return;
+      if (wouldCreateCycle(tasks, params.source, params.target)) {
+        alert(
+          `¡Acción no permitida! Crear la ligadura de [${params.source}] a [${params.target}] generaría un bucle circular en la red ROY.`
+        );
+        return;
       }
+      onAddDependency(params.target, params.source, 'FC', 0);
     },
-    [onAddDependency]
+    [tasks, onAddDependency]
   );
 
   // Manejador de doble clic en aristas (Punto 2)
@@ -216,7 +305,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-lg">
         <button
           onClick={() => fitView({ padding: 0.2, duration: 400 })}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
           title="Ajustar vista al tamaño de la pantalla (Zoom to Fit)"
         >
           <Maximize2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -228,7 +317,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
             applyLayout(direction);
             setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 60);
           }}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
           title="Reorganizar automáticamente los nodos evitando cruces de aristas y solapamientos"
         >
           <RefreshCw className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -246,6 +335,8 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         onPaneContextMenu={handlePaneContextMenu}
         onNodeContextMenu={handleNodeContextMenu}
         onPaneClick={() => setContextMenu(null)}
+        isValidConnection={isValidConnection}
+        connectionLineStyle={{ stroke: '#2563EB', strokeWidth: 2.5 }}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView

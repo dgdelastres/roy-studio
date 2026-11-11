@@ -20,9 +20,9 @@ export function getLayoutedElements(
     rankdir: direction,
     ranker: 'network-simplex',
     align: isHorizontal ? 'UL' : undefined,
-    nodesep: isHorizontal ? 110 : 120,
-    ranksep: isHorizontal ? 180 : 150,
-    edgesep: 45,
+    nodesep: isHorizontal ? 100 : 110,
+    ranksep: isHorizontal ? 160 : 140,
+    edgesep: 40,
     marginx: 60,
     marginy: 60,
   });
@@ -55,13 +55,10 @@ export function getLayoutedElements(
   });
 
   const layoutedEdges = edges.map((edge) => {
-    const edgeWithPoints = dagreGraph.edge(edge.source, edge.target);
     return {
       ...edge,
-      data: {
-        ...(edge.data || {}),
-        points: edgeWithPoints?.points || undefined,
-      },
+      sourceHandle: 'right-source',
+      targetHandle: 'left-target',
     };
   });
 
