@@ -57,8 +57,8 @@ export function getLayoutedElements(
   const layoutedEdges = edges.map((edge) => {
     return {
       ...edge,
-      sourceHandle: 'right-source',
-      targetHandle: 'left-target',
+      sourceHandle: edge.sourceHandle || 'right-source-mid',
+      targetHandle: edge.targetHandle || 'left-target-mid',
     };
   });
 

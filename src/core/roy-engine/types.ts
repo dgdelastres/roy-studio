@@ -9,6 +9,8 @@ export interface Dependency {
   predecessorId: string;
   type: DependencyType;
   lag: number; // Desfase / retardo (semanas, meses, días). Puede ser positivo, 0 o negativo
+  sourceHandle?: string; // Conector de salida elegido (ej: right-source-top, -mid, -bot)
+  targetHandle?: string; // Conector de entrada elegido (ej: left-target-top, -mid, -bot)
 }
 
 export interface Task {

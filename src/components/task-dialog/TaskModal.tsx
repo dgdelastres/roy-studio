@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Task, Dependency, DependencyType, Department } from '../../core/roy-engine/types';
 import { PILPIS_DEPARTMENTS } from '../../theme/departments';
 import { X, Plus, Trash2, Save, Layers, Clock, Building2, Link2 } from 'lucide-react';
@@ -28,6 +28,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   const [departmentId, setDepartmentId] = useState('D1');
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (taskToEdit) {
@@ -46,6 +47,15 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       setDependencies([]);
     }
     setValidationError(null);
+
+    // Auto-foco directo e inmediato en el campo de Nombre al abrir (Decisión grill-me)
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        nameInputRef.current?.focus();
+        nameInputRef.current?.select();
+      }, 60);
+      return () => clearTimeout(timer);
+    }
   }, [taskToEdit, allTasks, isOpen]);
 
   if (!isOpen) return null;
@@ -174,6 +184,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 Nombre de la Actividad *
               </label>
               <input
+                ref={nameInputRef}
+                autoFocus
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
