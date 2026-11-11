@@ -100,7 +100,9 @@ export const App: React.FC = () => {
     targetId: string,
     predecessorId: string,
     type: DependencyType = 'FC',
-    lag = 0
+    lag = 0,
+    sourceHandle?: string,
+    targetHandle?: string
   ) => {
     if (targetId === predecessorId) return;
 
@@ -111,7 +113,10 @@ export const App: React.FC = () => {
           if (alreadyExists) return t;
           return {
             ...t,
-            dependencies: [...t.dependencies, { predecessorId, type, lag }],
+            dependencies: [
+              ...t.dependencies,
+              { predecessorId, type, lag, sourceHandle, targetHandle },
+            ],
           };
         }
         return t;
