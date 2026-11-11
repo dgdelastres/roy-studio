@@ -42,11 +42,61 @@ interface RoyCanvasProps {
   isActive?: boolean;
   onEditTask: (task: Task) => void;
   onAddTask?: () => void;
-  onAddDependency: (targetId: string, predecessorId: string, type: DependencyType, lag: number) => void;
+  onAddDependency: (
+    targetId: string,
+    predecessorId: string,
+    type: DependencyType,
+    lag: number,
+    sourceHandle?: string,
+    targetHandle?: string
+  ) => void;
   onEditDependency?: (targetId: string, predecessorId: string, type: DependencyType, lag: number) => void;
   hasCycle?: boolean;
   cyclePath?: string[];
 }
+
+// Distribución inteligente de puertos en 3 alturas (Superior 25%, Centro 50%, Inferior 75%)
+const getDistributedSourceHandle = (
+  predId: string,
+  targetId: string,
+  tasks: Task[],
+  explicitHandle?: string
+): string => {
+  if (explicitHandle && explicitHandle.startsWith('right-source')) return explicitHandle;
+
+  const successors = tasks
+    .filter(t => t.dependencies.some(d => d.predecessorId === predId))
+    .map(t => t.id);
+
+  if (successors.length <= 1) return 'right-source-mid';
+
+  const index = successors.indexOf(targetId);
+  if (successors.length === 2) {
+    return index === 0 ? 'right-source-top' : 'right-source-bot';
+  }
+
+  const slots = ['right-source-top', 'right-source-mid', 'right-source-bot'];
+  return slots[index % slots.length];
+};
+
+const getDistributedTargetHandle = (
+  predId: string,
+  task: Task,
+  explicitHandle?: string
+): string => {
+  if (explicitHandle && explicitHandle.startsWith('left-target')) return explicitHandle;
+
+  const predecessors = task.dependencies.map(d => d.predecessorId);
+  if (predecessors.length <= 1) return 'left-target-mid';
+
+  const index = predecessors.indexOf(predId);
+  if (predecessors.length === 2) {
+    return index === 0 ? 'left-target-top' : 'left-target-bot';
+  }
+
+  const slots = ['left-target-top', 'left-target-mid', 'left-target-bot'];
+  return slots[index % slots.length];
+};
 
 const nodeTypes = {
   royNode: RoyNode,
@@ -73,6 +123,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
   const { fitView, zoomIn, zoomOut, setViewport } = useReactFlow();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [edgeCenterXs, setEdgeCenterXs] = useState<Record<string, number>>({});
+  const [edgeCenterYs, setEdgeCenterYs] = useState<Record<string, number>>({});
 
   // Cerrar el menú contextual al hacer clic fuera o pulsar Escape
   useEffect(() => {
@@ -106,17 +157,29 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
     [criticalEdges]
   );
 
-  const handleUpdateEdgeCenterX = useCallback((edgeId: string, newX: number | undefined) => {
-    setEdgeCenterXs(prev => {
-      const next = { ...prev };
-      if (newX === undefined) {
-        delete next[edgeId];
-      } else {
-        next[edgeId] = newX;
-      }
-      return next;
-    });
-  }, []);
+  const handleUpdateEdgeCenter = useCallback(
+    (edgeId: string, newX: number | undefined, newY: number | undefined) => {
+      setEdgeCenterXs(prev => {
+        const next = { ...prev };
+        if (newX === undefined) {
+          delete next[edgeId];
+        } else {
+          next[edgeId] = newX;
+        }
+        return next;
+      });
+      setEdgeCenterYs(prev => {
+        const next = { ...prev };
+        if (newY === undefined) {
+          delete next[edgeId];
+        } else {
+          next[edgeId] = newY;
+        }
+        return next;
+      });
+    },
+    []
+  );
 
   const initialNodes: Node[] = useMemo(() => {
     return tasks.map(task => ({
@@ -138,20 +201,34 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
       task.dependencies.forEach(dep => {
         const edgeId = `e-${dep.predecessorId}-${task.id}`;
         const critical = isCriticalEdge(dep.predecessorId, task.id);
+        const sourceHandle = getDistributedSourceHandle(
+          dep.predecessorId,
+          task.id,
+          tasks,
+          dep.sourceHandle
+        );
+        const targetHandle = getDistributedTargetHandle(
+          dep.predecessorId,
+          task,
+          dep.targetHandle
+        );
+
         edgesList.push({
           id: edgeId,
           source: dep.predecessorId,
           target: task.id,
-          sourceHandle: 'right-source',
-          targetHandle: 'left-target',
+          sourceHandle,
+          targetHandle,
           type: 'royEdge',
           data: {
             type: dep.type,
             lag: dep.lag,
             isCritical: critical,
             customCenterX: edgeCenterXs[edgeId],
+            customCenterY: edgeCenterYs[edgeId],
             onDoubleClick: () => onEditDependency?.(task.id, dep.predecessorId, dep.type, dep.lag),
-            onUpdateCenterX: (newX: number | undefined) => handleUpdateEdgeCenterX(edgeId, newX),
+            onUpdateCenter: (newX: number | undefined, newY: number | undefined) =>
+              handleUpdateEdgeCenter(edgeId, newX, newY),
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
@@ -163,7 +240,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
       });
     });
     return edgesList;
-  }, [tasks, isCriticalEdge, onEditDependency, edgeCenterXs, handleUpdateEdgeCenterX]);
+  }, [tasks, isCriticalEdge, onEditDependency, edgeCenterXs, edgeCenterYs, handleUpdateEdgeCenter]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -235,17 +312,27 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
     [tasks, initialEdges, direction, viewMode, onEditTask, departments, setNodes, setEdges]
   );
 
-  // Validación estricta de conexiones (Punto 1):
-  // 1. Salida solo por la derecha (right-source)
-  // 2. Entrada solo por la izquierda (left-target)
+  // Validación estricta de conexiones (Sistema Multi-Puerto):
+  // 1. Salida solo por los puertos de la derecha (right-source-top/mid/bot)
+  // 2. Entrada solo por los puertos de la izquierda (left-target-top/mid/bot)
   // 3. Flujo natural izquierda -> derecha (predecesora a la izq, sucesora a la der)
   // 4. Bloqueo preventivo de bucles circulares (wouldCreateCycle)
   const isValidConnection = useCallback(
     (edgeOrConnection: Edge | Connection) => {
       if (!edgeOrConnection.source || !edgeOrConnection.target) return false;
       if (edgeOrConnection.source === edgeOrConnection.target) return false;
-      if (edgeOrConnection.sourceHandle && edgeOrConnection.sourceHandle !== 'right-source') return false;
-      if (edgeOrConnection.targetHandle && edgeOrConnection.targetHandle !== 'left-target') return false;
+      if (
+        edgeOrConnection.sourceHandle &&
+        !edgeOrConnection.sourceHandle.startsWith('right-source')
+      ) {
+        return false;
+      }
+      if (
+        edgeOrConnection.targetHandle &&
+        !edgeOrConnection.targetHandle.startsWith('left-target')
+      ) {
+        return false;
+      }
       if (wouldCreateCycle(tasks, edgeOrConnection.source, edgeOrConnection.target)) return false;
       return true;
     },
@@ -261,7 +348,14 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         );
         return;
       }
-      onAddDependency(params.target, params.source, 'FC', 0);
+      onAddDependency(
+        params.target,
+        params.source,
+        'FC',
+        0,
+        params.sourceHandle || undefined,
+        params.targetHandle || undefined
+      );
     },
     [tasks, onAddDependency]
   );
@@ -376,8 +470,10 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
             top: Math.min(contextMenu.y, window.innerHeight - 260),
             zIndex: 100,
           }}
-          className="w-56 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl py-1.5 divide-y divide-slate-100 dark:divide-slate-800 text-xs animate-in fade-in zoom-in-95 duration-100"
+          className="nopan nodrag nowheel w-56 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl py-1.5 divide-y divide-slate-100 dark:divide-slate-800 text-xs animate-in fade-in zoom-in-95 duration-100 select-none"
           onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
         >
           <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             Menú Red ROY
@@ -412,8 +508,13 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
             <div className="py-1">
               <button
                 onClick={() => {
-                  onAddTask();
                   setContextMenu(null);
+                  if (document.activeElement instanceof HTMLElement) {
+                    document.activeElement.blur();
+                  }
+                  setTimeout(() => {
+                    onAddTask();
+                  }, 40);
                 }}
                 className="w-full px-3 py-1.5 text-left text-slate-800 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2 cursor-pointer font-medium transition-colors"
               >
