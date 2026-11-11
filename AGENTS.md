@@ -43,6 +43,7 @@ Guía operativa y estándares de arquitectura para el desarrollo y mantenimiento
 2. **Consultas Puntuales**: No leer ficheros completos innecesariamente. Leer solo los rangos de líneas relevantes usando `StartLine` y `EndLine`.
 3. **Divulgación Progresiva**: Consultar documentación especializada solo bajo demanda (`docs/ROADMAP.md` para futuros módulos).
 4. **Higiene de Sesión**: Sugerir proactivamente el comando `/compact` al usuario cuando el historial acumule múltiples iteraciones de trabajo.
+5. **Protocolo Básico Obligatorio (`grill-me` + `context7-mcp`)**: Aplicar de forma sistemática la directiva de la skill `protocolo-basico`. Ante decisiones de UX/UI, esquemas de datos o dicotomías técnicas, consultar preventivamente `context7-mcp` e interrogar al usuario con `ask_question` (con opciones estructuradas y `(Recommended)`) antes de escribir código para evitar el consumo innecesario de tokens.
 
 ---
 
