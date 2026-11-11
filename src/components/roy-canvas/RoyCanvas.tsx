@@ -16,7 +16,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { Task, DependencyType } from '../../core/roy-engine/types';
+import { Task, DependencyType, Department } from '../../core/roy-engine/types';
 import { RoyNode } from './RoyNode';
 import { RoyEdge } from './RoyEdge';
 import { getLayoutedElements, LayoutDirection } from './layout';
@@ -37,12 +37,14 @@ interface RoyCanvasProps {
   criticalEdges: Array<{ source: string; target: string }>;
   viewMode: 'full' | 'compact';
   direction: LayoutDirection;
+  departments?: Department[];
+  isActive?: boolean;
   onEditTask: (task: Task) => void;
   onAddTask?: () => void;
   onAddDependency: (targetId: string, predecessorId: string, type: DependencyType, lag: number) => void;
+  onEditDependency?: (targetId: string, predecessorId: string, type: DependencyType, lag: number) => void;
   hasCycle?: boolean;
   cyclePath?: string[];
-  onRelayoutRequested?: () => void;
 }
 
 const nodeTypes = {
@@ -58,15 +60,19 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
   criticalEdges,
   viewMode,
   direction,
+  departments,
+  isActive = true,
   onEditTask,
   onAddTask,
   onAddDependency,
+  onEditDependency,
   hasCycle,
   cyclePath,
 }) => {
   const { fitView, zoomIn, zoomOut, setViewport } = useReactFlow();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
+  // Cerrar el menú contextual al hacer clic fuera o pulsar Escape
   useEffect(() => {
     const handleGlobalClick = () => setContextMenu(null);
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -80,6 +86,16 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  // Ajustar la vista automáticamente cuando se vuelve a activar la pestaña "Red ROY" (Punto 3)
+  useEffect(() => {
+    if (isActive) {
+      const timer = setTimeout(() => {
+        fitView({ padding: 0.2, duration: 250 });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, fitView]);
 
   const isCriticalEdge = useCallback(
     (source: string, target: string) => {
@@ -97,9 +113,10 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         task,
         viewMode,
         onEdit: onEditTask,
+        departments,
       },
     }));
-  }, [tasks, viewMode, onEditTask]);
+  }, [tasks, viewMode, onEditTask, departments]);
 
   const initialEdges: Edge[] = useMemo(() => {
     const edgesList: Edge[] = [];
@@ -115,6 +132,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
             type: dep.type,
             lag: dep.lag,
             isCritical: critical,
+            onDoubleClick: () => onEditDependency?.(task.id, dep.predecessorId, dep.type, dep.lag),
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
@@ -126,7 +144,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
       });
     });
     return edgesList;
-  }, [tasks, isCriticalEdge]);
+  }, [tasks, isCriticalEdge, onEditDependency]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -149,20 +167,34 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
     applyLayout(direction);
   }, [tasks.length, direction, viewMode]);
 
+  // Arrastre entre conectores para crear ligadura (Punto 2)
   const handleConnect = useCallback(
     (params: Connection) => {
-      if (params.source && params.target) {
+      if (params.source && params.target && params.source !== params.target) {
         onAddDependency(params.target, params.source, 'FC', 0);
       }
     },
     [onAddDependency]
   );
 
+  // Manejador de doble clic en aristas (Punto 2)
+  const handleEdgeDoubleClick = useCallback(
+    (_event: React.MouseEvent, edge: Edge) => {
+      const edgeData = edge.data as Record<string, unknown> | undefined;
+      const type = (edgeData?.type as DependencyType) || 'FC';
+      const lag = (edgeData?.lag as number) || 0;
+      onEditDependency?.(edge.target, edge.source, type, lag);
+    },
+    [onEditDependency]
+  );
+
+  // Manejador de click derecho sobre el lienzo
   const handlePaneContextMenu = useCallback((event: MouseEvent | React.MouseEvent) => {
     event.preventDefault();
     setContextMenu({ x: event.clientX, y: event.clientY });
   }, []);
 
+  // Manejador de click derecho sobre nodos
   const handleNodeContextMenu = useCallback((event: MouseEvent | React.MouseEvent, _node?: Node) => {
     event.preventDefault();
     setContextMenu({ x: event.clientX, y: event.clientY });
@@ -180,6 +212,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         </div>
       )}
 
+      {/* Barra flotante superior */}
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-lg">
         <button
           onClick={() => fitView({ padding: 0.2, duration: 400 })}
@@ -196,7 +229,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
             setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 60);
           }}
           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors"
-          title="Reorganizar automáticamente los nodos según niveles topológicos"
+          title="Reorganizar automáticamente los nodos evitando cruces de aristas y solapamientos"
         >
           <RefreshCw className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
           <span className="hidden sm:inline">Auto-Organizar</span>
@@ -209,6 +242,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={handleConnect}
+        onEdgeDoubleClick={handleEdgeDoubleClick}
         onPaneContextMenu={handlePaneContextMenu}
         onNodeContextMenu={handleNodeContextMenu}
         onPaneClick={() => setContextMenu(null)}
@@ -216,7 +250,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         edgeTypes={edgeTypes}
         fitView
         fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.1}
+        minZoom={0.08}
         maxZoom={3.0}
         proOptions={{ hideAttribution: true }}
       >
@@ -232,7 +266,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
           nodeColor={(n) => {
             const task = tasks.find(t => t.id === n.id);
             if (task?.isCritical) return '#DC2626';
-            if (task) return getDepartmentById(task.departmentId).color;
+            if (task) return getDepartmentById(task.departmentId, departments).color;
             return '#94A3B8';
           }}
           nodeStrokeWidth={2}
@@ -242,6 +276,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         />
       </ReactFlow>
 
+      {/* Menú Contextual de Clic Derecho */}
       {contextMenu && (
         <div
           style={{

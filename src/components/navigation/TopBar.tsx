@@ -7,6 +7,7 @@ import {
   Moon,
   Download,
   Upload,
+  Users,
   Save,
   Trash2,
   Sparkles,
@@ -39,6 +40,7 @@ interface TopBarProps {
   onExportPdf: () => void;
   onSaveJson: () => void;
   onOpenImportModal: () => void;
+  onOpenDepartmentModal: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -60,10 +62,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   onExportPdf,
   onSaveJson,
   onOpenImportModal,
+  onOpenDepartmentModal,
 }) => {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
+  // Cerrar menú al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
@@ -82,6 +86,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   return (
     <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 flex items-center justify-between z-30 shrink-0">
       <div className="flex items-center gap-4">
+        {/* Brand & Title */}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-500 flex items-center justify-center text-white font-mono font-black text-sm shadow-md shadow-blue-500/20">
             R
@@ -103,6 +108,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
 
+        {/* Tab navigation */}
         <div className="flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-semibold">
           <button
             onClick={() => setActiveTab('roy')}
@@ -140,6 +146,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
+      {/* KPI Project Summary */}
       <div className="hidden lg:flex items-center gap-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 px-3 py-1 rounded-lg text-xs font-mono">
         <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
           <span>Duración Total:</span>
@@ -156,6 +163,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
+      {/* Actions */}
       <div className="flex items-center gap-2">
         {activeTab === 'roy' && (
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs">
@@ -179,6 +187,16 @@ export const TopBar: React.FC<TopBarProps> = ({
           </div>
         )}
 
+        {/* Botón Gestión de Equipos y Departamentos (Punto 4) */}
+        <button
+          onClick={onOpenDepartmentModal}
+          className="px-2.5 py-1.5 rounded-lg border border-purple-200 dark:border-purple-900/80 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+          title="Gestionar equipos técnicos, cambiar nombres y paletas de color"
+        >
+          <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+          <span className="hidden sm:inline">Equipos</span>
+        </button>
+
         <button
           onClick={onLoadPilpisTemplate}
           className="px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
@@ -188,6 +206,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="hidden sm:inline">Caso PILPIS</span>
         </button>
 
+        {/* Botón Importar dedicado */}
         <button
           onClick={onOpenImportModal}
           className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
@@ -197,6 +216,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span>Importar</span>
         </button>
 
+        {/* Menú Desplegable Exportar */}
         <div
           className="relative"
           ref={exportRef}
@@ -267,6 +287,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
         </div>
 
+        {/* Theme toggle */}
         <button
           onClick={() => setIsDark(!isDark)}
           className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"

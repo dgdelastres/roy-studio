@@ -1,13 +1,16 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Task, DependencyType } from './core/roy-engine/types';
+import { Task, DependencyType, Department } from './core/roy-engine/types';
 import { calculateRoy } from './core/roy-engine/calculator';
 import { PILPIS_PROJECT_TASKS } from './templates/pilpisProject';
+import { PILPIS_DEPARTMENTS } from './theme/departments';
 import { TopBar, ActiveTab } from './components/navigation/TopBar';
 import { RoyCanvas } from './components/roy-canvas/RoyCanvas';
 import { GanttView } from './components/gantt/GanttView';
 import { TaskTable } from './components/task-table/TaskTable';
 import { TaskModal } from './components/task-dialog/TaskModal';
 import { ImportModal } from './components/import-dialog/ImportModal';
+import { EdgeModal, EdgeEditData } from './components/edge-dialog/EdgeModal';
+import { DepartmentModal } from './components/department-dialog/DepartmentModal';
 import { LayoutDirection } from './components/roy-canvas/layout';
 import { exportTasksToExcel } from './utils/export/exportExcel';
 import { exportProjectReportPdf } from './utils/export/exportPdf';
@@ -16,14 +19,20 @@ import confetti from 'canvas-confetti';
 
 export const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>(PILPIS_PROJECT_TASKS);
+  const [departments, setDepartments] = useState<Department[]>(PILPIS_DEPARTMENTS);
   const [activeTab, setActiveTab] = useState<ActiveTab>('roy');
   const [viewMode, setViewMode] = useState<'full' | 'compact'>('full');
   const [direction, setDirection] = useState<LayoutDirection>('LR');
   const [isDark, setIsDark] = useState<boolean>(false);
 
+  // Modales
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
+  const [isEdgeModalOpen, setIsEdgeModalOpen] = useState(false);
+
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  const [edgeToEdit, setEdgeToEdit] = useState<EdgeEditData | null>(null);
 
   useEffect(() => {
     if (isDark) {
@@ -35,6 +44,14 @@ export const App: React.FC = () => {
 
   const calculation = useMemo(() => {
     return calculateRoy(tasks);
+  }, [tasks]);
+
+  const taskCountsByDept = useMemo(() => {
+    const counts: Record<string, number> = {};
+    tasks.forEach(t => {
+      counts[t.departmentId] = (counts[t.departmentId] || 0) + 1;
+    });
+    return counts;
   }, [tasks]);
 
   const triggerCelebration = useCallback(() => {
@@ -102,9 +119,65 @@ export const App: React.FC = () => {
     );
   };
 
+  // Edición de ligadura con doble clic (Punto 2)
+  const handleEditDependency = (
+    targetId: string,
+    predecessorId: string,
+    type: DependencyType,
+    lag: number
+  ) => {
+    const pred = tasks.find(t => t.id === predecessorId);
+    const target = tasks.find(t => t.id === targetId);
+    setEdgeToEdit({
+      targetId,
+      targetName: target?.name || targetId,
+      predecessorId,
+      predecessorName: pred?.name || predecessorId,
+      type,
+      lag,
+    });
+    setIsEdgeModalOpen(true);
+  };
+
+  const handleUpdateDependency = (
+    targetId: string,
+    predecessorId: string,
+    type: DependencyType,
+    lag: number
+  ) => {
+    setTasks(prev =>
+      prev.map(t => {
+        if (t.id === targetId) {
+          return {
+            ...t,
+            dependencies: t.dependencies.map(d =>
+              d.predecessorId === predecessorId ? { ...d, type, lag } : d
+            ),
+          };
+        }
+        return t;
+      })
+    );
+  };
+
+  const handleDeleteDependency = (targetId: string, predecessorId: string) => {
+    setTasks(prev =>
+      prev.map(t => {
+        if (t.id === targetId) {
+          return {
+            ...t,
+            dependencies: t.dependencies.filter(d => d.predecessorId !== predecessorId),
+          };
+        }
+        return t;
+      })
+    );
+  };
+
   const handleLoadPilpisTemplate = () => {
     if (confirm('¿Cargar la plantilla completa del Anteproyecto PILPIS - QUIMISUR (24 meses)? Se reemplazarán los datos actuales.')) {
       setTasks(PILPIS_PROJECT_TASKS);
+      setDepartments(PILPIS_DEPARTMENTS);
       triggerCelebration();
     }
   };
@@ -128,6 +201,7 @@ export const App: React.FC = () => {
       version: '1.0',
       projectName: 'Anteproyecto PILPIS - QUIMISUR',
       exportDate: new Date().toISOString(),
+      departments,
       tasks: calculation.tasks,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -188,16 +262,20 @@ export const App: React.FC = () => {
         }
         onSaveJson={handleSaveJson}
         onOpenImportModal={() => setIsImportModalOpen(true)}
+        onOpenDepartmentModal={() => setIsDeptModalOpen(true)}
       />
 
+      {/* Contenedor principal con persistencia de vistas en DOM para evitar desajustes de cámara (Punto 3) */}
       <main className="flex-1 relative overflow-hidden">
-        {activeTab === 'roy' && (
+        <div className={`w-full h-full ${activeTab === 'roy' ? 'block' : 'hidden'}`}>
           <RoyCanvas
             tasks={calculation.tasks}
             criticalTasks={calculation.criticalTasks}
             criticalEdges={calculation.criticalEdges}
             viewMode={viewMode}
             direction={direction}
+            departments={departments}
+            isActive={activeTab === 'roy'}
             onEditTask={task => {
               setTaskToEdit(task);
               setIsModalOpen(true);
@@ -207,25 +285,28 @@ export const App: React.FC = () => {
               setIsModalOpen(true);
             }}
             onAddDependency={handleAddDependency}
+            onEditDependency={handleEditDependency}
             hasCycle={calculation.hasCycle}
             cyclePath={calculation.cyclePath}
           />
-        )}
+        </div>
 
-        {activeTab === 'gantt' && (
+        <div className={`w-full h-full ${activeTab === 'gantt' ? 'block' : 'hidden'}`}>
           <GanttView
             tasks={calculation.tasks}
             totalDuration={calculation.totalProjectDuration}
+            departments={departments}
             onEditTask={task => {
               setTaskToEdit(task);
               setIsModalOpen(true);
             }}
           />
-        )}
+        </div>
 
-        {activeTab === 'table' && (
+        <div className={`w-full h-full ${activeTab === 'table' ? 'block' : 'hidden'}`}>
           <TaskTable
             tasks={calculation.tasks}
+            departments={departments}
             onEditTask={task => {
               setTaskToEdit(task);
               setIsModalOpen(true);
@@ -237,9 +318,10 @@ export const App: React.FC = () => {
             }}
             onDuplicateTask={handleDuplicateTask}
           />
-        )}
+        </div>
       </main>
 
+      {/* Modal de Tarea */}
       <TaskModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -250,12 +332,35 @@ export const App: React.FC = () => {
         onDelete={handleDeleteTask}
         taskToEdit={taskToEdit}
         allTasks={calculation.tasks}
+        departments={departments}
       />
 
+      {/* Modal de Importación */}
       <ImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImportTasks={handleImportTasks}
+      />
+
+      {/* Modal de Edición de Ligadura (Punto 2) */}
+      <EdgeModal
+        isOpen={isEdgeModalOpen}
+        onClose={() => {
+          setIsEdgeModalOpen(false);
+          setEdgeToEdit(null);
+        }}
+        edgeData={edgeToEdit}
+        onUpdateDependency={handleUpdateDependency}
+        onDeleteDependency={handleDeleteDependency}
+      />
+
+      {/* Modal de Gestión de Equipos (Punto 4) */}
+      <DepartmentModal
+        isOpen={isDeptModalOpen}
+        onClose={() => setIsDeptModalOpen(false)}
+        departments={departments}
+        onSaveDepartments={setDepartments}
+        taskCountsByDept={taskCountsByDept}
       />
     </div>
   );
