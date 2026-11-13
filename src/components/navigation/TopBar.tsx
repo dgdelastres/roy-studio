@@ -16,6 +16,7 @@ import {
   FileSpreadsheet,
   FileText,
   Image,
+  Plus,
 } from 'lucide-react';
 import { LayoutDirection } from '../roy-canvas/layout';
 
@@ -41,6 +42,7 @@ interface TopBarProps {
   onSaveJson: () => void;
   onOpenImportModal: () => void;
   onOpenDepartmentModal: () => void;
+  onAddTask: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -63,6 +65,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onSaveJson,
   onOpenImportModal,
   onOpenDepartmentModal,
+  onAddTask,
 }) => {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -186,6 +189,16 @@ export const TopBar: React.FC<TopBarProps> = ({
             </button>
           </div>
         )}
+
+        {/* Acceso rápido a Nueva Tarea (Botón Principal) */}
+        <button
+          onClick={onAddTask}
+          className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-blue-500/20 cursor-pointer"
+          title="Crear una nueva tarea en el proyecto"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>+ Tarea</span>
+        </button>
 
         {/* Botón Gestión de Equipos y Departamentos (Punto 4) */}
         <button

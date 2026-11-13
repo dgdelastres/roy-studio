@@ -324,6 +324,11 @@ export const App: React.FC = () => {
         onSaveJson={handleSaveJson}
         onOpenImportModal={() => setIsImportModalOpen(true)}
         onOpenDepartmentModal={() => setIsDeptModalOpen(true)}
+        onAddTask={() => {
+          setTaskToEdit(null);
+          setNewTaskPosition(null);
+          setIsModalOpen(true);
+        }}
       />
 
       {/* Contenedor principal con persistencia de vistas en DOM para evitar desajustes de cámara (Punto 3) */}

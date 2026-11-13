@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect, useState } from 'react';
+import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -183,15 +183,27 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
     };
   }, []);
 
-  // Ajustar la vista suavemente cuando se vuelve a activar la pestaña "Red ROY"
+  // Centrado panorámico automático con transición suave (300ms, padding 20%) al montar o volver a activar "Red ROY"
   useEffect(() => {
     if (isActive) {
       const timer = setTimeout(() => {
-        fitView({ padding: 0.2, duration: 250 });
-      }, 50);
+        fitView({ padding: 0.2, duration: 300 });
+      }, 60);
       return () => clearTimeout(timer);
     }
   }, [isActive, fitView]);
+
+  // Centrado panorámico suave ante cambios significativos de volumen de tareas (ej. cargar plantilla PILPIS o limpiar)
+  const prevTasksCountRef = useRef(tasks.length);
+  useEffect(() => {
+    if (prevTasksCountRef.current !== tasks.length) {
+      prevTasksCountRef.current = tasks.length;
+      const timer = setTimeout(() => {
+        fitView({ padding: 0.2, duration: 300 });
+      }, 80);
+      return () => clearTimeout(timer);
+    }
+  }, [tasks.length, fitView]);
 
   const isCriticalEdge = useCallback(
     (source: string, target: string) => {
@@ -223,20 +235,6 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
     },
     []
   );
-
-  const initialNodes: Node[] = useMemo(() => {
-    return tasks.map(task => ({
-      id: task.id,
-      type: 'royNode',
-      position: task.position || { x: 0, y: 0 },
-      data: {
-        task,
-        viewMode,
-        onEdit: onEditTask,
-        departments,
-      },
-    }));
-  }, [tasks, viewMode, onEditTask, departments]);
 
   const initialEdges: Edge[] = useMemo(() => {
     const edgesList: Edge[] = [];
@@ -285,6 +283,36 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
     });
     return edgesList;
   }, [tasks, isCriticalEdge, onEditDependency, edgeCenterXs, edgeCenterYs, handleUpdateEdgeCenter]);
+
+  const initialNodes: Node[] = useMemo(() => {
+    const rawNodes: Node[] = tasks.map(task => ({
+      id: task.id,
+      type: 'royNode',
+      position: task.position || { x: 0, y: 0 },
+      data: {
+        task,
+        viewMode,
+        onEdit: onEditTask,
+        departments,
+      },
+    }));
+
+    // Si ninguna tarea tiene coordenadas personalizadas, organizamos inicialmente con Dagre
+    const hasCustomPositions = tasks.some(
+      t => t.position && (t.position.x !== 0 || t.position.y !== 0)
+    );
+    if (!hasCustomPositions && rawNodes.length > 0) {
+      const { nodes: layoutedNodes } = getLayoutedElements(
+        rawNodes,
+        initialEdges,
+        direction,
+        viewMode
+      );
+      return layoutedNodes;
+    }
+
+    return rawNodes;
+  }, [tasks, viewMode, onEditTask, departments, initialEdges, direction]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -490,7 +518,12 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
+        fitViewOptions={{ padding: 0.2, duration: 300 }}
+        onInit={(instance) => {
+          setTimeout(() => {
+            instance.fitView({ padding: 0.2, duration: 300 });
+          }, 60);
+        }}
         minZoom={0.08}
         maxZoom={3.0}
         proOptions={{ hideAttribution: true }}
