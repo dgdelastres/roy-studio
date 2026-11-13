@@ -594,7 +594,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
           color="#94A3B8"
           className="opacity-45"
         />
-        <Controls className="!bg-white dark:!bg-slate-900 !border-slate-300 dark:!border-slate-800 !rounded-xl !shadow-md overflow-hidden" />
+        <Controls className="!bg-white !border-slate-300 !rounded-xl !shadow-md overflow-hidden" />
         <MiniMap
           nodeColor={(n) => {
             const task = tasks.find(t => t.id === n.id);

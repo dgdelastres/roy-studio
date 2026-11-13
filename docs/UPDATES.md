@@ -32,6 +32,10 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
      - Proyección y visualización de fechas naturales reales (DD/MM/AAAA) en las tareas y en el Gantt.
      - Modal `CalendarModal` accesible mediante el nuevo botón "Calendario" de la barra superior.
 
+5. **Contraste de Controles de Zoom y Bloqueo en Red ROY**:
+   - **Componentes**: `src/index.css`, `src/components/roy-canvas/RoyCanvas.tsx`.
+   - **Descripción**: Los botones de control flotantes de la esquina inferior izquierda (`Controls`: zoom in, zoom out, fit view, bloqueo) se fijan de forma permanente con fondo blanco puro y símbolos de trazo negro de alto contraste, tanto en modo oscuro como en modo claro, garantizando una legibilidad visual impecable sin desvanecimiento de iconos.
+
 ---
 
 ## [v1.0.1] — 2026-11-13 (Commit: `291a8f2`)
