@@ -16,7 +16,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { Task, DependencyType, Department } from '../../core/roy-engine/types';
+import { Task, DependencyType, Department, TimeUnit } from '../../core/roy-engine/types';
 import { wouldCreateCycle } from '../../core/roy-engine/calculator';
 import { RoyNode } from './RoyNode';
 import { RoyEdge } from './RoyEdge';
@@ -30,6 +30,8 @@ import {
   ZoomOut,
   Locate,
   PlusCircle,
+  Sparkles,
+  Upload,
 } from 'lucide-react';
 
 interface RoyCanvasProps {
@@ -40,6 +42,7 @@ interface RoyCanvasProps {
   direction: LayoutDirection;
   departments?: Department[];
   isActive?: boolean;
+  timeUnit?: TimeUnit;
   onEditTask: (task: Task) => void;
   onAddTask?: (initialPosition?: { x: number; y: number }) => void;
   onDeleteTask?: (taskId: string) => void;
@@ -54,6 +57,8 @@ interface RoyCanvasProps {
     targetHandle?: string
   ) => void;
   onEditDependency?: (targetId: string, predecessorId: string, type: DependencyType, lag: number) => void;
+  onLoadPilpisTemplate?: () => void;
+  onOpenImportModal?: () => void;
   hasCycle?: boolean;
   cyclePath?: string[];
 }
@@ -116,6 +121,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
   direction,
   departments,
   isActive = true,
+  timeUnit = 'months',
   onEditTask,
   onAddTask,
   onDeleteTask,
@@ -123,6 +129,8 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
   onReconnectDependency,
   onAddDependency,
   onEditDependency,
+  onLoadPilpisTemplate,
+  onOpenImportModal,
   hasCycle,
   cyclePath,
 }) => {
@@ -294,6 +302,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         viewMode,
         onEdit: onEditTask,
         departments,
+        timeUnit,
       },
     }));
 
@@ -347,11 +356,12 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
             viewMode,
             onEdit: onEditTask,
             departments,
+            timeUnit,
           },
         };
       });
     });
-  }, [tasks, viewMode, onEditTask, departments, setNodes]);
+  }, [tasks, viewMode, onEditTask, departments, timeUnit, setNodes]);
 
   // Sincronización reactiva inmediata de aristas (Punto 3)
   useEffect(() => {
@@ -370,6 +380,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
           viewMode,
           onEdit: onEditTask,
           departments,
+          timeUnit,
         },
       }));
       const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
@@ -470,6 +481,54 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-red-600 text-white px-4 py-2 rounded-xl shadow-xl flex items-center gap-2 text-xs font-semibold animate-bounce">
           <AlertTriangle className="w-4 h-4" />
           <span>¡Error en la red! Se ha detectado un bucle circular: {cyclePath?.join(' → ')}</span>
+        </div>
+      )}
+
+      {/* Estado Inicial de Bienvenida (Lienzo Vacío) */}
+      {tasks.length === 0 && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center p-4 pointer-events-none">
+          <div className="pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl p-8 max-w-md shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-inner">
+              <Sparkles className="w-7 h-7" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                Bienvenido a ROY Studio
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                El proyecto actual está vacío. Comienza creando la primera actividad de tu proyecto, carga el caso de ejemplo PILPIS o importa un archivo existente.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
+              {onAddTask && (
+                <button
+                  onClick={() => onAddTask({ x: 300, y: 200 })}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>+ Crear Tarea</span>
+                </button>
+              )}
+              {onLoadPilpisTemplate && (
+                <button
+                  onClick={onLoadPilpisTemplate}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Caso PILPIS</span>
+                </button>
+              )}
+              {onOpenImportModal && (
+                <button
+                  onClick={onOpenImportModal}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <span>Importar</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

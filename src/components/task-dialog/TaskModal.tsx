@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Task, Dependency, DependencyType, Department } from '../../core/roy-engine/types';
+import { Task, Dependency, DependencyType, Department, TimeUnit } from '../../core/roy-engine/types';
 import { PILPIS_DEPARTMENTS } from '../../theme/departments';
+import { getTimeUnitLabel } from '../../core/roy-engine/calendar';
 import { X, Plus, Trash2, Save, Layers, Clock, Building2, Link2 } from 'lucide-react';
 
 interface TaskModalProps {
@@ -11,6 +12,7 @@ interface TaskModalProps {
   taskToEdit?: Task | null;
   allTasks: Task[];
   departments?: Department[];
+  timeUnit?: TimeUnit;
 }
 
 export const TaskModal: React.FC<TaskModalProps> = ({
@@ -21,6 +23,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   taskToEdit,
   allTasks,
   departments = PILPIS_DEPARTMENTS,
+  timeUnit = 'months',
 }) => {
   const [id, setId] = useState('');
   const [name, setName] = useState('');
@@ -224,7 +227,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             <div>
               <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
-                Duración (meses) *
+                Duración ({getTimeUnitLabel(timeUnit)}) *
               </label>
               <input
                 type="number"

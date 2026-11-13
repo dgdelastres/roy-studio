@@ -61,3 +61,19 @@ export interface RoyCalculationResult {
   cyclePath?: string[];
   errors: string[];
 }
+
+export type TimeUnit = 'days' | 'weeks' | 'months';
+
+export interface Holiday {
+  id: string;
+  date: string; // Formato YYYY-MM-DD
+  name: string;
+}
+
+export interface ProjectCalendar {
+  startDate: string; // Formato YYYY-MM-DD
+  workDays: number[]; // 1 = Lunes, 2 = Martes, ..., 5 = Viernes, 6 = Sábado, 0 = Domingo
+  holidays: Holiday[];
+  timeUnit: TimeUnit;
+}
+

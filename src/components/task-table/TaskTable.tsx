@@ -1,11 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Task, Department } from '../../core/roy-engine/types';
+import { Task, Department, TimeUnit, ProjectCalendar } from '../../core/roy-engine/types';
 import { PILPIS_DEPARTMENTS, getDepartmentById } from '../../theme/departments';
+import { getTimeUnitShort } from '../../core/roy-engine/calendar';
 import { Search, Plus, Edit2, Trash2, Copy, AlertCircle } from 'lucide-react';
 
 interface TaskTableProps {
   tasks: Task[];
   departments?: Department[];
+  calendar?: ProjectCalendar;
+  timeUnit?: TimeUnit;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onAddTask: () => void;
@@ -15,6 +18,8 @@ interface TaskTableProps {
 export const TaskTable: React.FC<TaskTableProps> = ({
   tasks,
   departments = PILPIS_DEPARTMENTS,
+  calendar,
+  timeUnit = calendar?.timeUnit || 'months',
   onEditTask,
   onDeleteTask,
   onAddTask,
@@ -22,6 +27,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deptFilter, setDeptFilter] = useState('ALL');
+  const unitShort = getTimeUnitShort(timeUnit);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -78,7 +84,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
               <th className="py-2.5 px-4 w-16">ID</th>
               <th className="py-2.5 px-4">Nombre de la Actividad</th>
               <th className="py-2.5 px-4 w-44">Departamento</th>
-              <th className="py-2.5 px-4 w-20 text-right">Duración</th>
+              <th className="py-2.5 px-4 w-24 text-right">Duración ({unitShort})</th>
               <th className="py-2.5 px-4 w-24 text-center font-mono">ES / EF</th>
               <th className="py-2.5 px-4 w-24 text-center font-mono">LS / LF</th>
               <th className="py-2.5 px-4 w-16 text-right font-mono">HT</th>
@@ -129,7 +135,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
                   </td>
 
                   <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-800 dark:text-slate-200">
-                    {task.duration} m
+                    {task.duration} {unitShort}
                   </td>
 
                   <td className="py-2.5 px-4 text-center font-mono text-[11px] text-blue-700 dark:text-blue-300">

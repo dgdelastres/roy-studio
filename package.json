@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "electron:dev": "concurrently \"vite\" \"cross-env WAIT_FOR_DEV=1 electron .\"",
-    "electron:build": "tsc && vite build && electron-builder"
+    "electron:build": "tsc && vite build && electron-builder",
+    "pack:silent": "powershell -ExecutionPolicy Bypass -File scripts/build-portable-silent.ps1"
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",

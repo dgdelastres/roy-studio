@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Edge, Connection } from '@xyflow/react';
-import { Task, Dependency, DependencyType, Department } from './core/roy-engine/types';
+import { Task, Dependency, DependencyType, Department, ProjectCalendar } from './core/roy-engine/types';
 import { calculateRoy } from './core/roy-engine/calculator';
+import { DEFAULT_PROJECT_CALENDAR } from './core/roy-engine/calendar';
 import { PILPIS_PROJECT_TASKS } from './templates/pilpisProject';
 import { PILPIS_DEPARTMENTS } from './theme/departments';
 import { TopBar, ActiveTab } from './components/navigation/TopBar';
@@ -12,6 +13,7 @@ import { TaskModal } from './components/task-dialog/TaskModal';
 import { ImportModal } from './components/import-dialog/ImportModal';
 import { EdgeModal, EdgeEditData } from './components/edge-dialog/EdgeModal';
 import { DepartmentModal } from './components/department-dialog/DepartmentModal';
+import { CalendarModal } from './components/calendar-dialog/CalendarModal';
 import { LayoutDirection } from './components/roy-canvas/layout';
 import { exportTasksToExcel } from './utils/export/exportExcel';
 import { exportProjectReportPdf } from './utils/export/exportPdf';
@@ -19,8 +21,9 @@ import { exportCanvasToPng, exportCanvasToSvg } from './utils/export/exportImage
 import confetti from 'canvas-confetti';
 
 export const App: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>(PILPIS_PROJECT_TASKS);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [departments, setDepartments] = useState<Department[]>(PILPIS_DEPARTMENTS);
+  const [calendar, setCalendar] = useState<ProjectCalendar>(DEFAULT_PROJECT_CALENDAR);
   const [activeTab, setActiveTab] = useState<ActiveTab>('roy');
   const [viewMode, setViewMode] = useState<'full' | 'compact'>('full');
   const [direction, setDirection] = useState<LayoutDirection>('LR');
@@ -31,6 +34,7 @@ export const App: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [isEdgeModalOpen, setIsEdgeModalOpen] = useState(false);
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
 
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [edgeToEdit, setEdgeToEdit] = useState<EdgeEditData | null>(null);
@@ -239,21 +243,14 @@ export const App: React.FC = () => {
     if (confirm('¿Cargar la plantilla completa del Anteproyecto PILPIS - QUIMISUR (24 meses)? Se reemplazarán los datos actuales.')) {
       setTasks(PILPIS_PROJECT_TASKS);
       setDepartments(PILPIS_DEPARTMENTS);
+      setCalendar(prev => ({ ...prev, timeUnit: 'months' }));
       triggerCelebration();
     }
   };
 
   const handleClearProject = () => {
     if (confirm('¿Deseas vaciar el proyecto para empezar uno nuevo de cero?')) {
-      setTasks([
-        {
-          id: 'T01',
-          name: 'Primera Actividad del Proyecto',
-          duration: 2,
-          departmentId: 'D1',
-          dependencies: [],
-        },
-      ]);
+      setTasks([]);
     }
   };
 
@@ -308,6 +305,8 @@ export const App: React.FC = () => {
         setIsDark={setIsDark}
         totalDuration={calculation.totalProjectDuration}
         criticalCount={calculation.criticalTasks.length}
+        calendar={calendar}
+        onOpenCalendarModal={() => setIsCalendarModalOpen(true)}
         onLoadPilpisTemplate={handleLoadPilpisTemplate}
         onClearProject={handleClearProject}
         onExportPng={() => exportCanvasToPng('.react-flow', 'Diagrama_ROY_PILPIS.png')}
@@ -342,6 +341,9 @@ export const App: React.FC = () => {
             direction={direction}
             departments={departments}
             isActive={activeTab === 'roy'}
+            timeUnit={calendar.timeUnit}
+            onLoadPilpisTemplate={handleLoadPilpisTemplate}
+            onOpenImportModal={() => setIsImportModalOpen(true)}
             onEditTask={task => {
               setTaskToEdit(task);
               setIsModalOpen(true);
@@ -366,6 +368,7 @@ export const App: React.FC = () => {
             tasks={calculation.tasks}
             totalDuration={calculation.totalProjectDuration}
             departments={departments}
+            calendar={calendar}
             onEditTask={task => {
               setTaskToEdit(task);
               setIsModalOpen(true);
@@ -377,6 +380,7 @@ export const App: React.FC = () => {
           <TaskTable
             tasks={calculation.tasks}
             departments={departments}
+            calendar={calendar}
             onEditTask={task => {
               setTaskToEdit(task);
               setIsModalOpen(true);
@@ -403,6 +407,7 @@ export const App: React.FC = () => {
         taskToEdit={taskToEdit}
         allTasks={calculation.tasks}
         departments={departments}
+        timeUnit={calendar.timeUnit}
       />
 
       {/* Modal de Importación */}
@@ -431,6 +436,14 @@ export const App: React.FC = () => {
         departments={departments}
         onSaveDepartments={setDepartments}
         taskCountsByDept={taskCountsByDept}
+      />
+
+      {/* Modal de Calendario del Proyecto y Días Festivos */}
+      <CalendarModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
+        calendar={calendar}
+        onSaveCalendar={setCalendar}
       />
     </div>
   );

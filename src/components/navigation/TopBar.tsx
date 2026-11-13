@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Network,
   Calendar,
+  CalendarDays,
   Table as TableIcon,
   Sun,
   Moon,
@@ -19,6 +20,8 @@ import {
   Plus,
 } from 'lucide-react';
 import { LayoutDirection } from '../roy-canvas/layout';
+import { ProjectCalendar } from '../../core/roy-engine/types';
+import { getTimeUnitLabel, getTimeUnitShort } from '../../core/roy-engine/calendar';
 
 export type ActiveTab = 'roy' | 'gantt' | 'table';
 
@@ -33,6 +36,8 @@ interface TopBarProps {
   setIsDark: (dark: boolean) => void;
   totalDuration: number;
   criticalCount: number;
+  calendar?: ProjectCalendar;
+  onOpenCalendarModal?: () => void;
   onLoadPilpisTemplate: () => void;
   onClearProject: () => void;
   onExportPng: () => void;
@@ -56,6 +61,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   setIsDark,
   totalDuration,
   criticalCount,
+  calendar,
+  onOpenCalendarModal,
   onLoadPilpisTemplate,
   onClearProject,
   onExportPng,
@@ -154,7 +161,10 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
           <span>Duración Total:</span>
           <span className="font-bold text-blue-600 dark:text-blue-400 text-sm">
-            {totalDuration} <span className="text-[11px] font-normal">meses</span>
+            {totalDuration}{' '}
+            <span className="text-[11px] font-normal">
+              {calendar ? getTimeUnitLabel(calendar.timeUnit, totalDuration) : 'meses'}
+            </span>
           </span>
         </div>
         <div className="h-3 w-px bg-slate-300 dark:bg-slate-700" />
@@ -210,14 +220,22 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="hidden sm:inline">Equipos</span>
         </button>
 
-        <button
-          onClick={onLoadPilpisTemplate}
-          className="px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-          title="Cargar la plantilla oficial del Anteproyecto PILPIS (24 meses)"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Caso PILPIS</span>
-        </button>
+        {/* Botón Calendario y Escala Temporal */}
+        {onOpenCalendarModal && (
+          <button
+            onClick={onOpenCalendarModal}
+            className="px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-900/80 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+            title="Configurar calendario de proyecto: fecha de inicio, festivos y unidad temporal (días, semanas, meses)"
+          >
+            <CalendarDays className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span className="hidden sm:inline">Calendario</span>
+            {calendar && (
+              <span className="font-mono text-[10px] px-1 py-0.2 rounded bg-blue-200/70 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                {getTimeUnitShort(calendar.timeUnit)}
+              </span>
+            )}
+          </button>
+        )}
 
         {/* Botón Importar dedicado */}
         <button
@@ -286,6 +304,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                   >
                     <Save className="w-4 h-4 text-blue-500" />
                     <span>Guardar Proyecto (.json)</span>
+                  </button>
+                  <button
+                    onClick={() => handleExportAction(onLoadPilpisTemplate)}
+                    className="w-full px-3 py-1.5 text-left text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Sparkles className="w-4 h-4 text-blue-500" />
+                    <span>Cargar Caso PILPIS (24 meses)</span>
                   </button>
                   <button
                     onClick={() => handleExportAction(onClearProject)}

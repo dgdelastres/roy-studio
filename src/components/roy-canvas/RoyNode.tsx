@@ -1,7 +1,8 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Task, Department } from '../../core/roy-engine/types';
+import { Task, Department, TimeUnit } from '../../core/roy-engine/types';
 import { getDepartmentById } from '../../theme/departments';
+import { getTimeUnitShort, getTimeUnitLabel } from '../../core/roy-engine/calendar';
 import { AlertCircle, Clock } from 'lucide-react';
 
 export interface RoyNodeData {
@@ -9,12 +10,15 @@ export interface RoyNodeData {
   viewMode: 'full' | 'compact';
   onEdit?: (task: Task) => void;
   departments?: Department[];
+  timeUnit?: TimeUnit;
 }
 
 export const RoyNode = memo(({ data, selected }: NodeProps) => {
-  const { task, viewMode, onEdit, departments } = data as unknown as RoyNodeData;
+  const { task, viewMode, onEdit, departments, timeUnit = 'months' } = data as unknown as RoyNodeData;
   const dept = getDepartmentById(task.departmentId, departments);
   const isCritical = task.isCritical ?? false;
+  const unitShort = getTimeUnitShort(timeUnit);
+  const unitLabel = getTimeUnitLabel(timeUnit, task.duration);
 
   const es = task.earlyStart ?? 0;
   const ef = task.earlyFinish ?? 0;
@@ -168,10 +172,10 @@ export const RoyNode = memo(({ data, selected }: NodeProps) => {
         </span>
         <span
           className="font-mono font-semibold flex items-center gap-1 shrink-0 text-slate-700 dark:text-slate-200 cursor-help"
-          title={`d: Duración estimada de la tarea = ${task.duration} meses`}
+          title={`d: Duración estimada de la tarea = ${task.duration} ${unitLabel}`}
         >
           <Clock className="w-3 h-3 text-slate-400" />
-          d = <strong className="text-slate-900 dark:text-white">{task.duration}</strong> m
+          d = <strong className="text-slate-900 dark:text-white">{task.duration}</strong> {unitShort}
         </span>
       </div>
 

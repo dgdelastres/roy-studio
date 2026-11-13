@@ -4,6 +4,36 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
 
 ---
 
+## [Mejoras de Usabilidad, Calendario y Gantt] — 2026-11-13
+
+### 🚀 Novedades y Cosas Añadidas
+1. **Inicio de Proyecto Limpio y Selector de Ejemplo PILPIS en Menú Exportar**:
+   - **Componentes**: `src/App.tsx`, `src/components/roy-canvas/RoyCanvas.tsx`, `src/components/navigation/TopBar.tsx`.
+   - **Descripción**: La aplicación ya no se abre por defecto con el caso de ejemplo precargado. En su lugar, arranca con un proyecto en blanco y muestra en el lienzo de Red ROY un panel central de bienvenida con accesos rápidos: `+ Crear Tarea`, `Caso PILPIS` e `Importar`.
+   - **Reubicación de Caso PILPIS**: Se retiró el botón estático de la barra superior y se ubicó como opción dentro del menú desplegable `Exportar / Proyecto` ("Cargar Caso PILPIS (24 meses)").
+
+2. **Flechas de Conexión de Etapas en el Diagrama de Gantt**:
+   - **Componentes**: `src/components/gantt/GanttView.tsx`.
+   - **Descripción**: Capa SVG ortogonal que traza líneas y flechas direccionales entre los extremos de las barras de tareas según el tipo de ligadura ($FC, CC, FF, CF$).
+   - **Resaltado Crítico**: Las dependencias pertenecientes al camino crítico se colorean en rojo `#DC2626` con flechas sólidas rojas. Las ligaduras ordinarias se muestran en tono neutro `#94A3B8`.
+   - **Control de Visibilidad**: Toggle `[✓] Enlaces de Etapas` en la barra del Gantt para activar/ocultar los conectores visuales.
+
+3. **Selector Global de Unidades Temporales (Días, Semanas, Meses)**:
+   - **Componentes**: `src/core/roy-engine/types.ts`, `src/core/roy-engine/calendar.ts`, `src/components/roy-canvas/RoyNode.tsx`, `src/components/gantt/GanttView.tsx`, `src/components/task-table/TaskTable.tsx`, `src/components/task-dialog/TaskModal.tsx`.
+   - **Descripción**: Soporte para unidades de duración en `days` (días `d`), `weeks` (semanas `sem`) y `months` (meses `m`).
+   - **Consistencia Visual**: Las cabeceras del Gantt se adaptan dinámicamente (`M1, M2...`, `S1, S2...`, `D1, D2...`), al igual que las etiquetas en las tarjetas de nodos ROY, la columna de duración de la tabla y los modales.
+
+4. **Calendario de Proyecto y Gestión de Días Festivos**:
+   - **Componentes**: `src/core/roy-engine/calendar.ts`, `src/core/roy-engine/calendar.test.ts`, `src/components/calendar-dialog/CalendarModal.tsx`.
+   - **Descripción**: 
+     - Configuración de la fecha de inicio del proyecto (punto cero para el cálculo de fechas de calendario).
+     - Configuración de la jornada semanal (días hábiles vs descansos).
+     - Lista editable de días festivos e inhábiles (se omiten automáticamente en la proyección temporal cuando se trabaja en días).
+     - Proyección y visualización de fechas naturales reales (DD/MM/AAAA) en las tareas y en el Gantt.
+     - Modal `CalendarModal` accesible mediante el nuevo botón "Calendario" de la barra superior.
+
+---
+
 ## [v1.0.1] — 2026-11-13 (Commit: `291a8f2`)
 
 ### 🚀 Novedades y Cosas Añadidas
