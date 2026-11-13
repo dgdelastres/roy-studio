@@ -47,6 +47,18 @@ Documento de referencia técnica para la evolución funcional y extensión acad�
   - Detección de variaciones en el camino crítico.
   - Resumen ejecutivo de sobrecostes por aceleración.
 
+### Hito 6: Distribución Dual & Sistema de Licenciamiento (Edición Pro vs Community/Testing)
+- **Objetivo**: Establecer una arquitectura de distribución profesional en un monorepo unificado que soporte tanto el desarrollo ágil de pruebas como una versión comercial formal protegida por licencias.
+- **Componentes**:
+  - **Estrategia de Código Unificado**: Mismo núcleo algorítmico y UI para evitar divergencias y duplicación de mantenimiento.
+  - **Compilación y Empaquetado Dual (Electron Builder)**:
+    - *Versión Portable*: Ejecutable de doble clic directo (`.exe`), orientado a pruebas rápidas, entornos universitarios o ejecución desde USB sin permisos de administrador.
+    - *Versión Instalable (Setup NSIS)*: Instalador formal para Windows con asistente paso a paso, integración en el sistema, accesos directos y registro de aplicación.
+  - **Módulo de Licenciamiento y Activación (Por definir técnicamente en fase comercial)**:
+    - Espacio reservado para validación de claves (modelo offline criptográfico o activación vía API web).
+    - Persistencia de credenciales en almacenamiento seguro de Windows.
+    - Control de funcionalidades avanzadas (*feature gating* condicional).
+
 ---
 
 ## 2. Invariantes de Calidad para Futuros Módulos
