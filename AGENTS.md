@@ -34,6 +34,7 @@ Guía operativa y estándares de arquitectura para el desarrollo y mantenimiento
 - `src/components/import-dialog/`: Importador tolerante de Excel y JSON con previsualización.
 - `src/utils/export/`: Generación de informes PDF formales, hojas Excel y descargas PNG/SVG.
 - `docs/ROADMAP.md`: Especificaciones y expectativas futuras (recursos, curva S, PERT, EVM).
+- `docs/QA_BASELINE.md`: Certificación formal de pruebas y matriz de re-verificación por impacto de diff.
 
 ---
 
@@ -44,6 +45,7 @@ Guía operativa y estándares de arquitectura para el desarrollo y mantenimiento
 3. **Divulgación Progresiva**: Consultar documentación especializada solo bajo demanda (`docs/ROADMAP.md` para futuros módulos).
 4. **Higiene de Sesión**: Sugerir proactivamente el comando `/compact` al usuario cuando el historial acumule múltiples iteraciones de trabajo.
 5. **Protocolo Básico Obligatorio (`grill-me` + `context7-mcp`)**: Aplicar de forma sistemática la directiva de la skill `protocolo-basico`. Ante decisiones de UX/UI, esquemas de datos o dicotomías técnicas, consultar preventivamente `context7-mcp` e interrogar al usuario con `ask_question` (con opciones estructuradas y `(Recommended)`) antes de escribir código para evitar el consumo innecesario de tokens.
+6. **Línea Base de Pruebas (QA Baseline)**: Consultar obligatoriamente `docs/QA_BASELINE.md`. Prohibido volver a inspeccionar o ejecutar pruebas de interfaz/navegador sobre módulos ya certificados (motor de cálculo, GANTT, lienzo, modales, temas) salvo que el diff del código toque directamente sus archivos o el usuario lo ordene expresamente.
 
 ---
 
