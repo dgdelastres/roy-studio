@@ -47,11 +47,12 @@ Antes de levantar el navegador o ejecutar baterías de pruebas, consulta esta ma
 
 ---
 
-## 3. Backlog de Mejoras Menores de UI Identificadas (No Bloqueantes)
+## 3. Registro Histórico de Mejoras y Novedades
 
-1. **Ajuste inicial de vista (*Fit View*)**:
-   * *Diagnóstico*: En la primera carga del lienzo, la cámara arranca demasiado próxima a un nodo individual (`T26`).
-   * *Acción futura*: Invocar `fitView()` automáticamente tras el montaje inicial del grafo.
-2. **Acceso directo de creación de tareas**:
-   * *Diagnóstico*: El botón `+ Nueva Tarea` se ubica principalmente en la pestaña de Tabla.
-   * *Acción futura*: Añadir botón rápido en la barra superior o creación por doble clic en el lienzo vacío.
+Todas las mejoras implementadas y los cambios arquitectónicos se registran en el documento vivo [docs/UPDATES.md](file:///c:/Users/s/Desktop/proyecto_ROY_STUDIO/docs/UPDATES.md).
+
+### Estado del Backlog Menor (v1.0.1):
+1. **Ajuste inicial de vista (*Fit View*)**: ✅ **RESUELTO** en v1.0.1. Layout inicial Dagre con centrado suave (300 ms, 20% padding) automático.
+2. **Acceso directo de creación de tareas**: ✅ **RESUELTO** en v1.0.1. Botón `+ Tarea` integrado en la barra superior (`TopBar`).
+
+> **Política de Eficiencia de Tokens**: Para optimizar el consumo de tokens y contexto, **NO se realizarán revisiones, auditorías pesadas ni lanzamientos de navegadores** salvo indicación expresa del usuario. Toda novedad se documentará en [docs/UPDATES.md](file:///c:/Users/s/Desktop/proyecto_ROY_STUDIO/docs/UPDATES.md) y en los commits para su inspección bajo demanda.
