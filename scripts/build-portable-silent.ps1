@@ -5,11 +5,14 @@ $ErrorActionPreference = "Stop"
 $logPath = "dist-win\build-silent.log"
 
 # Asegurar directorio de salida y cerrar instancias previas para liberar archivos
+Stop-Process -Name "ROY Studio*" -Force -ErrorAction SilentlyContinue
+Start-Sleep -Milliseconds 500
+
 if (-not (Test-Path "dist-win")) {
     New-Item -ItemType Directory -Path "dist-win" -Force | Out-Null
+} else {
+    Remove-Item -Recurse -Force "dist-win\win-unpacked" -ErrorAction SilentlyContinue
 }
-Stop-Process -Name "ROY Studio" -Force -ErrorAction SilentlyContinue
-Start-Sleep -Milliseconds 500
 
 try {
     # 1. Compilación de producción (Vite + TypeScript)

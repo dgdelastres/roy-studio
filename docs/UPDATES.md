@@ -4,9 +4,9 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
 
 ---
 
-## [Mejoras de Usabilidad, Calendario y Gantt] — 2026-11-13
+## [v1.0.1] — 2026-11-15 (Release Oficial)
 
-### 🚀 Novedades y Cosas Añadidas
+### 🚀 Novedades y Mejoras Consolidadas
 1. **Inicio de Proyecto Limpio y Selector de Ejemplo PILPIS en Menú Exportar**:
    - **Componentes**: `src/App.tsx`, `src/components/roy-canvas/RoyCanvas.tsx`, `src/components/navigation/TopBar.tsx`.
    - **Descripción**: La aplicación ya no se abre por defecto con el caso de ejemplo precargado. En su lugar, arranca con un proyecto en blanco y muestra en el lienzo de Red ROY un panel central de bienvenida con accesos rápidos: `+ Crear Tarea`, `Caso PILPIS` e `Importar`.
@@ -36,23 +36,9 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
    - **Componentes**: `src/index.css`, `src/components/roy-canvas/RoyCanvas.tsx`.
    - **Descripción**: Los botones de control flotantes de la esquina inferior izquierda (`Controls`: zoom in, zoom out, fit view, bloqueo) se fijan de forma permanente con fondo blanco puro y símbolos de trazo negro de alto contraste, tanto en modo oscuro como en modo claro, garantizando una legibilidad visual impecable sin desvanecimiento de iconos.
 
----
-
-## [v1.0.1] — 2026-11-13 (Commit: `291a8f2`)
-
-### 🚀 Novedades y Cosas Añadidas
-1. **Acceso Rápido a '+ Tarea' en Cabecera**:
-   - **Componente**: `src/components/navigation/TopBar.tsx` y `src/App.tsx`.
-   - **Descripción**: Botón primario prominente `+ Tarea` en color azul situado en la barra superior principal, disponible en todo momento sin importar la pestaña activa (*Red ROY*, *Gantt*, *Tabla*).
-   - **Comportamiento**: Abre inmediatamente el formulario `TaskModal` precargado en modo de creación limpia.
-   - **Punto de inspección futura**: Clic en `+ Tarea` en TopBar → apertura de modal → guardado de tarea → recálculo automático.
-
-2. **Fit View y Centrado Panorámico Automático en Red ROY**:
-   - **Componentes**: `src/components/roy-canvas/RoyCanvas.tsx`.
-   - **Descripción**:
-     - **Layout Inicial con Dagre**: Si los nodos cargados carecen de coordenadas personalizadas (como en la plantilla oficial PILPIS), se les asigna distribución jerárquica con Dagre antes de renderizar, evitando que nazcan solapados en `(0,0)`.
-     - **Centrado Suave (300 ms, 20% padding)**: Activación automática de `fitView` al montar el lienzo, al regresar de otra pestaña o al cargar/reiniciar proyectos (Caso PILPIS).
-   - **Punto de inspección futura**: Al abrir el lienzo o cargar plantilla, la vista se encuadra automáticamente con animación suave sin requerir pulsar "Auto-Organizar".
+6. **Acceso Rápido a '+ Tarea' y Fit View Inicial**:
+   - **Componentes**: `src/components/navigation/TopBar.tsx`, `src/components/roy-canvas/RoyCanvas.tsx`.
+   - **Descripción**: Botón persistente `+ Tarea` en barra superior y centrado panorámico suave (`fitView` 300ms) con layout Dagre automático para prevenir solapes de nodos.
 
 ---
 
