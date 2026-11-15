@@ -1,48 +1,49 @@
-name: Release Windows Executable
+name: Release ROY Studio
 
 on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   build-and-release:
-    name: Build & Package Windows App
     runs-on: windows-latest
 
     steps:
-      - name: Check out repository
+      - name: Checkout Código Fuente
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Instalar Dependencias
         run: npm install
 
-      - name: Run verification tests
-        run: npm run test
+      - name: Verificación de Tipos y Tests
+        run: |
+          npm run typecheck
+          npm run test
 
-      - name: Build web application
+      - name: Compilar Frontend Web
         run: npm run build
 
-      - name: Build portable Windows executable
+      - name: Compilar Ejecutable Portable (Electron Builder)
         run: npx electron-builder --win portable
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload executable to GitHub Release
+      - name: Publicar Release Oficial con Ejecutable Adjunto
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: dist-win/*.exe
           generate_release_notes: true
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
