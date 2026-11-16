@@ -27,12 +27,18 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
    - **Interactividad y Edición**: Al hacer clic en cualquier tarea se abre el modal de edición (`TaskModal`). En vista cuadrícula, hacer clic en un día despliega un panel lateral con el detalle de actividades de esa fecha.
    - **Exclusión de Días No Laborables**: Las tareas se asignan y muestran exclusivamente en las jornadas hábiles de trabajo. Los fines de semana y festivos oficiales quedan completamente despejados de tareas con etiquetas identificativas de `Inhábil` o el nombre del festivo correspondiente.
 
-3. **Identidad del Ejecutable, Icono Oficial y Mitigación de Alertas de Antivirus**:
-   - **Componentes**: `package.json`, `electron/main.cjs`, `build/icon.ico`, `build/icon.png`, `public/icon.png`, `README.md`.
+3. **Identidad del Ejecutable, Distribución Multi-Formato y Mitigación de Alertas de Antivirus**:
+   - **Componentes**: `package.json`, `.github/workflows/release.yml`, `src/components/update-dialog/UpdateModal.tsx`, `electron/main.cjs`, `build/icon.ico`, `build/icon.png`, `README.md`.
+   - **Terna de Distribución Oficial (Instalador NSIS, Portable y ZIP)**:
+     - Configurado `electron-builder` para compilar simultáneamente:
+       1. `Setup.exe` (Instalador NSIS estándar con acceso directo en Escritorio y Menú Inicio, sin pedir permisos de administrador gracias a `oneClick: true, perMachine: false`).
+       2. `Portable.exe` (Ejecutable directo autónomo).
+       3. `.zip` (Carpeta comprimida lista para extraer y ejecutar sin disparar la pantalla preventiva de SmartScreen).
+   - **Workflow de GitHub Actions Actualizado**: Empaquetado y subida automática de binarios `.exe` y archivos `.zip` en cada release.
+   - **Guía Asistida en el Modal de Actualizaciones**: Nota explicativa contextual en `UpdateModal` que indica a los usuarios cómo proceder con *"Más información" -> "Ejecutar de todas formas"* en SmartScreen la primera vez.
    - **Icono Oficial de Alta Resolución**: Generado el icono propio de ROY Studio (`build/icon.ico` e `icon.png` 256x256), reemplazando el icono genérico de Electron que activaba alertas heurísticas en antivirus.
    - **Metadatos Formales de Binario en Windows**: Integrados `author`, `CompanyName`, `LegalCopyright`, `LegalTrademarks` y `FileDescription` en los recursos del archivo `.exe`.
    - **Seguridad en Nivel de Usuario (`asInvoker`)**: Configurada la directiva de ejecución sin privilegios de administrador para garantizar a Windows que la app no realiza modificaciones en el sistema.
-   - **Documentación de SmartScreen**: Sección explicativa en `README.md` para usuarios que descarguen las versiones de GitHub.
 
 4. **Comprobación Automática de Nuevas Versiones en GitHub Releases**:
    - **Componentes**: `src/utils/updates/checkUpdate.ts`, `src/utils/updates/checkUpdate.test.ts`, `src/components/update-dialog/UpdateModal.tsx`, `electron/preload.cjs`, `electron/main.cjs`, `src/components/navigation/TopBar.tsx`, `src/App.tsx`.

@@ -33,15 +33,17 @@ jobs:
       - name: Compilar Frontend Web
         run: npm run build
 
-      - name: Compilar Ejecutable Portable (Electron Builder)
-        run: npx electron-builder --win portable
+      - name: Compilar Distribución Windows (Instalador, Portable y ZIP)
+        run: npx electron-builder --win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publicar Release Oficial con Ejecutable Adjunto
+      - name: Publicar Release Oficial con Ejecutable y Archivos Adjuntos
         uses: softprops/action-gh-release@v2
         with:
-          files: dist-win/*.exe
+          files: |
+            dist-win/*.exe
+            dist-win/*.zip
           generate_release_notes: true
           draft: false
           prerelease: false

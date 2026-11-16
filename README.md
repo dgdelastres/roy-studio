@@ -105,15 +105,22 @@ npm run build
 
 ---
 
-## 🛡️ Nota sobre la descarga en Windows (SmartScreen)
-Al ser una aplicación de ingeniería independiente y de código abierto sin un certificado corporativo comercial de pago anual (Microsoft Code Signing), la primera vez que descargues el ejecutable (`.exe`) desde las [Releases de GitHub](https://github.com/dgdelastres/roy-studio/releases), Windows Defender SmartScreen puede mostrar una pantalla preventiva azul:
-> *"Windows protegió su PC (Editor desconocido)"*
+## 🛡️ Opciones de descarga en Windows y aviso SmartScreen
 
-**Para iniciar la aplicación con total normalidad:**
-1. Haz clic en el texto **"Más información"**.
-2. Pulsa en el botón **"Ejecutar de todas formas"**.
+En las [Releases oficiales de GitHub](https://github.com/dgdelastres/roy-studio/releases), dispones de 3 formatos para descargar:
 
-El programa se ejecuta en modo usuario estándar (`asInvoker`) sin requerir permisos de administrador ni realizar modificaciones en el registro de Windows.
+1. **`ROY-Studio-Setup-X.X.X.exe` (Instalador recomendado)**: Instala la app en tu perfil de usuario (sin necesidad de permisos de administrador), crea acceso directo en el Escritorio y en el Menú Inicio, y arranca al instante.
+2. **`ROY-Studio-X.X.X.exe` (Portable)**: Ejecutable directo sin instalación, ideal para llevar en un pendrive.
+3. **`ROY-Studio-X.X.X-win.zip` (Archivo comprimido)**: Si deseas evitar la pantalla preventiva de SmartScreen, descarga el `.zip`, extrae la carpeta y ejecuta `ROY Studio.exe`.
+
+> [!NOTE]
+> Al ser una aplicación de ingeniería independiente sin certificado comercial corporativo de pago anual (\$300/año), la primera vez que descargues un `.exe` directamente de internet, Windows puede mostrar la pantalla azul preventiva: *"Windows protegió su PC (Editor: Desconocido)"*.
+> 
+> **Para ejecutarla la primera vez:**
+> 1. Haz clic en **"Más información"**.
+> 2. Pulsa en **"Ejecutar de todas formas"**.
+> 
+> *(Solo se requiere la primera vez; Windows lo recuerda y no vuelve a preguntar. La app se ejecuta en modo usuario `asInvoker` sin tocar registros ni requerir privilegios de administrador).*
 
 ---
 

@@ -117,6 +117,12 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             </div>
           </div>
 
+          {/* Tip de instalación / SmartScreen */}
+          <div className="p-2.5 rounded-lg bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 text-[11px] text-blue-700 dark:text-blue-300 flex items-start gap-2">
+            <span className="shrink-0 font-bold">💡 Nota:</span>
+            <span>Si Windows muestra <em>"Windows protegió su PC"</em>, pulsa en <strong>"Más información"</strong> y luego en <strong>"Ejecutar de todas formas"</strong> (solo la primera vez).</span>
+          </div>
+
           {/* Opción para no volver a preguntar sobre esta versión específica */}
           <label className="flex items-center gap-2 text-slate-500 dark:text-slate-400 cursor-pointer select-none pt-1">
             <input
