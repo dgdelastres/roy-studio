@@ -137,13 +137,27 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
 
         {/* Botones de Acción */}
         <div className="px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          >
-            Recordármelo más tarde
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleDismiss}
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            >
+              Recordármelo más tarde
+            </button>
+            {updateInfo.portableUrl && updateInfo.portableUrl !== updateInfo.downloadUrl && (
+              <button
+                type="button"
+                onClick={() => {
+                  openExternalUrl(updateInfo.portableUrl!);
+                  handleDismiss();
+                }}
+                className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+              >
+                Descargar Portable
+              </button>
+            )}
+          </div>
 
           <button
             type="button"
@@ -151,7 +165,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             className="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 shadow-md shadow-blue-500/20 transition-all cursor-pointer hover:scale-[1.02]"
           >
             <DownloadCloud className="w-4 h-4" />
-            <span>Descargar {updateInfo.latestVersion} (.exe)</span>
+            <span>Descargar {updateInfo.installerUrl ? 'Instalador Setup' : updateInfo.latestVersion}</span>
           </button>
         </div>
       </div>

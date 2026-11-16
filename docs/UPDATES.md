@@ -4,6 +4,26 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
 
 ---
 
+## [v1.0.3] — 2026-11-16 (Distribución Dual: Instalador Setup + Portable + ZIP)
+
+### 🚀 Novedades y Mejoras
+1. **Distribución Dual Formal (Setup.exe + Portable.exe + .zip)**:
+   - **Componentes**: `package.json`, `.github/workflows/release.yml`, `src/utils/updates/checkUpdate.ts`, `src/components/update-dialog/UpdateModal.tsx`.
+   - **Instalador NSIS (`ROY-Studio-Setup-1.0.3.exe`)**:
+     - Modo usuario con un solo clic (`oneClick: true, perMachine: false`).
+     - No requiere privilegios ni contraseña de administrador de Windows.
+     - Crea automáticamente el acceso directo en el **Escritorio** y en el **Menú Inicio**.
+     - Arranque nativo instantáneo (< 0.5 s).
+   - **Ejecutable Portable (`ROY-Studio-Portable-1.0.3.exe`)**:
+     - Conservado al 100% para quienes requieran llevar la aplicación en un pendrive o no deseen instalarla.
+   - **Carpeta Comprimida (`ROY-Studio-1.0.3-win.zip`)**:
+     - Formato alternativo para esquivar la pantalla preventiva de SmartScreen al descomprimir en disco.
+2. **Selector de Descarga Inteligente en el Modal de Actualizaciones**:
+   - `UpdateModal` prioriza la descarga directa del Instalador Setup oficial y añade acceso directo para descargar la versión Portable.
+   - Guía integrada para usuarios primerizos sobre el aviso de Microsoft Defender SmartScreen (*"Más información" -> "Ejecutar de todas formas"*).
+
+---
+
 ## [v1.0.2] — 2026-11-16 (Release Oficial)
 
 ### 🚀 Novedades y Mejoras Consolidadas

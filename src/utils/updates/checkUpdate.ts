@@ -10,11 +10,14 @@ export interface UpdateInfo {
   releaseNotes: string;
   releaseUrl: string;
   downloadUrl: string;
+  installerUrl?: string;
+  portableUrl?: string;
+  zipUrl?: string;
   publishedAt: string;
   hasUpdate: boolean;
 }
 
-export const CURRENT_VERSION = '1.0.2';
+export const CURRENT_VERSION = '1.0.3';
 export const GITHUB_REPO = 'dgdelastres/roy-studio';
 
 /**
@@ -66,15 +69,22 @@ export async function checkForUpdates(currentVersion: string = CURRENT_VERSION):
 
     const hasUpdate = compareVersions(currentVersion, latestTag) > 0;
 
-    // Buscar el asset ejecutable (.exe) oficial de Windows
-    const exeAsset = Array.isArray(data.assets)
-      ? data.assets.find((a: { name?: string; browser_download_url?: string }) => {
-          const name = (a.name || '').toLowerCase();
-          return name.endsWith('.exe') && !name.includes('unpacked');
-        })
-      : null;
+    // Buscar los assets oficiales de Windows (Instalador Setup, Portable y ZIP)
+    const assets = Array.isArray(data.assets) ? data.assets : [];
+    const installerAsset = assets.find((a: { name?: string; browser_download_url?: string }) => {
+      const name = (a.name || '').toLowerCase();
+      return name.endsWith('.exe') && name.includes('setup');
+    });
+    const portableAsset = assets.find((a: { name?: string; browser_download_url?: string }) => {
+      const name = (a.name || '').toLowerCase();
+      return name.endsWith('.exe') && (name.includes('portable') || !name.includes('setup'));
+    });
+    const zipAsset = assets.find((a: { name?: string; browser_download_url?: string }) => {
+      const name = (a.name || '').toLowerCase();
+      return name.endsWith('.zip');
+    });
 
-    const downloadUrl = exeAsset?.browser_download_url || data.html_url;
+    const downloadUrl = installerAsset?.browser_download_url || portableAsset?.browser_download_url || data.html_url;
 
     return {
       currentVersion,
@@ -83,6 +93,9 @@ export async function checkForUpdates(currentVersion: string = CURRENT_VERSION):
       releaseNotes: data.body || 'Correcciones y mejoras generales de estabilidad.',
       releaseUrl: data.html_url,
       downloadUrl,
+      installerUrl: installerAsset?.browser_download_url,
+      portableUrl: portableAsset?.browser_download_url,
+      zipUrl: zipAsset?.browser_download_url,
       publishedAt: data.published_at || '',
       hasUpdate,
     };

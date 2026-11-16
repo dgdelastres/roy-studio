@@ -1,6 +1,6 @@
 {
   "name": "roy-studio",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
@@ -103,7 +103,11 @@
       "shortcutName": "ROY Studio",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
-      "uninstallDisplayName": "ROY Studio"
+      "uninstallDisplayName": "ROY Studio",
+      "artifactName": "ROY-Studio-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "ROY-Studio-Portable-${version}.${ext}"
     }
   }
 }
