@@ -15,6 +15,8 @@ import { ImportModal } from './components/import-dialog/ImportModal';
 import { EdgeModal, EdgeEditData } from './components/edge-dialog/EdgeModal';
 import { DepartmentModal } from './components/department-dialog/DepartmentModal';
 import { CalendarModal } from './components/calendar-dialog/CalendarModal';
+import { UpdateModal } from './components/update-dialog/UpdateModal';
+import { checkForUpdates, UpdateInfo, CURRENT_VERSION } from './utils/updates/checkUpdate';
 import { LayoutDirection } from './components/roy-canvas/layout';
 import { exportTasksToExcel } from './utils/export/exportExcel';
 import { exportProjectReportPdf } from './utils/export/exportPdf';
@@ -36,10 +38,41 @@ export const App: React.FC = () => {
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [isEdgeModalOpen, setIsEdgeModalOpen] = useState(false);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
 
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [edgeToEdit, setEdgeToEdit] = useState<EdgeEditData | null>(null);
   const [newTaskPosition, setNewTaskPosition] = useState<{ x: number; y: number } | null>(null);
+
+  // Comprobación automática de versiones oficiales en GitHub al iniciar
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      const info = await checkForUpdates(CURRENT_VERSION);
+      if (info && info.hasUpdate) {
+        setUpdateInfo(info);
+        try {
+          const dismissed = localStorage.getItem('roy_dismissed_update_version');
+          if (dismissed !== info.latestVersion) {
+            setIsUpdateModalOpen(true);
+          }
+        } catch {
+          setIsUpdateModalOpen(true);
+        }
+      }
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleManualCheckUpdates = async () => {
+    const info = await checkForUpdates(CURRENT_VERSION);
+    if (info && info.hasUpdate) {
+      setUpdateInfo(info);
+      setIsUpdateModalOpen(true);
+    } else {
+      alert(`¡ROY Studio está actualizado!\nActualmente cuentas con la versión más reciente (v${CURRENT_VERSION}).`);
+    }
+  };
 
   useEffect(() => {
     if (isDark) {
@@ -332,6 +365,8 @@ export const App: React.FC = () => {
           setNewTaskPosition(null);
           setIsModalOpen(true);
         }}
+        onCheckUpdates={handleManualCheckUpdates}
+        hasUpdate={!!updateInfo?.hasUpdate}
       />
 
       {/* Contenedor principal con persistencia de vistas en DOM para evitar desajustes de cámara (Punto 3) */}
@@ -460,6 +495,13 @@ export const App: React.FC = () => {
         onClose={() => setIsCalendarModalOpen(false)}
         calendar={calendar}
         onSaveCalendar={setCalendar}
+      />
+
+      {/* Modal Informativo de Nueva Versión (GitHub Releases) */}
+      <UpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+        updateInfo={updateInfo}
       />
     </div>
   );

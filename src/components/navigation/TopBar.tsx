@@ -48,6 +48,8 @@ interface TopBarProps {
   onOpenImportModal: () => void;
   onOpenDepartmentModal: () => void;
   onAddTask: () => void;
+  onCheckUpdates?: () => void;
+  hasUpdate?: boolean;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -73,6 +75,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenImportModal,
   onOpenDepartmentModal,
   onAddTask,
+  onCheckUpdates,
+  hasUpdate,
 }) => {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -323,6 +327,20 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <Sparkles className="w-4 h-4 text-blue-500" />
                     <span>Cargar Caso PILPIS (24 meses)</span>
                   </button>
+                  {onCheckUpdates && (
+                    <button
+                      onClick={() => handleExportAction(onCheckUpdates)}
+                      className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center justify-between cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Download className="w-4 h-4 text-indigo-500" />
+                        <span>Buscar Actualizaciones</span>
+                      </div>
+                      {hasUpdate && (
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      )}
+                    </button>
+                  )}
                   <button
                     onClick={() => handleExportAction(onClearProject)}
                     className="w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center gap-2 cursor-pointer transition-colors"

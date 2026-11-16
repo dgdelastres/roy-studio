@@ -1,7 +1,16 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
 
 let mainWindow;
+
+// Manejador IPC para abrir enlaces externos (descargas, GitHub) en el navegador del usuario
+ipcMain.handle('open-external', async (_event, url) => {
+  if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
+    await shell.openExternal(url);
+    return true;
+  }
+  return false;
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({

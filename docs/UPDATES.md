@@ -34,6 +34,13 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
    - **Seguridad en Nivel de Usuario (`asInvoker`)**: Configurada la directiva de ejecución sin privilegios de administrador para garantizar a Windows que la app no realiza modificaciones en el sistema.
    - **Documentación de SmartScreen**: Sección explicativa en `README.md` para usuarios que descarguen las versiones de GitHub.
 
+4. **Comprobación Automática de Nuevas Versiones en GitHub Releases**:
+   - **Componentes**: `src/utils/updates/checkUpdate.ts`, `src/utils/updates/checkUpdate.test.ts`, `src/components/update-dialog/UpdateModal.tsx`, `electron/preload.cjs`, `electron/main.cjs`, `src/components/navigation/TopBar.tsx`, `src/App.tsx`.
+   - **Detección Automática al Iniciar**: Consulta de forma asíncrona la API pública de GitHub (`/releases/latest`) sin retrasar la carga del lienzo.
+   - **Modal Informativo de Actualización**: Si existe una versión superior, muestra una ventana con el comparador de versión (`vActual` ➔ `vNueva`), las notas de lanzamiento completas y opción para posponer o no volver a recordar esa versión.
+   - **Descarga Directa en Navegador**: Al pulsar 'Descargar vX.X.X (.exe)', abre directamente el enlace de descarga oficial en el navegador predeterminado del usuario mediante IPC `shell.openExternal`.
+   - **Búsqueda Manual**: Botón 'Buscar Actualizaciones' dentro del menú desplegable 'Exportar' para comprobar en cualquier momento.
+
 ---
 
 ## [v1.0.1] — 2026-11-15 (Release Oficial)

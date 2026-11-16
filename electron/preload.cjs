@@ -1,3 +1,7 @@
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('electronAPI', {\n  platform: process.platform,\n  version: process.versions.electron,\n});
+contextBridge.exposeInMainWorld('electronAPI', {
+  platform: process.platform,
+  version: process.versions.electron,
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+});
