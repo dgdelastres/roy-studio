@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "electron:dev": "concurrently \"vite\" \"cross-env WAIT_FOR_DEV=1 electron .\"",
     "electron:build": "tsc && vite build && electron-builder",
-    "pack:fast": "npm run build && electron-builder --dir",
+    "pack:fast": "powershell -ExecutionPolicy Bypass -File scripts/pack-fast.ps1",
     "pack:silent": "powershell -ExecutionPolicy Bypass -File scripts/build-portable-silent.ps1"
   },
   "dependencies": {

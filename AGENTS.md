@@ -48,6 +48,10 @@ Guía operativa y estándares de arquitectura para el desarrollo y mantenimiento
 6. **Línea Base y Registro de Actualizaciones (Zero-Inspection by Default)**:
    - Para minimizar el consumo de tokens y contexto, **queda terminantemente prohibido ejecutar revisiones, auditorías pesadas o pruebas de navegador/subagentes salvo indicación expresa del usuario**.
    - En su lugar, registrar de forma continua y quirúrgica cada cambio, componente afectado y novedad en [docs/UPDATES.md](file:///c:/Users/s/Desktop/proyecto_ROY_STUDIO/docs/UPDATES.md) y mediante mensajes descriptivos de Conventional Commits en git. Este documento será el índice de referencia donde consultar cada vez que el usuario ordene una inspección.
+7. **Cero Verificaciones Automáticas en Ciclo Rápido (Fast-Loop sin Esperas)**:
+   - **Regla Estricta del Usuario**: Queda terminantemente prohibido lanzar verificaciones automáticas (`typecheck`, `test`, `build`, `pack:fast`) tras cada cambio de código. Esto ralentiza el ciclo de desarrollo y consume tokens en exceso.
+   - Las modificaciones se aplican directamente de forma limpia y quirúrgica.
+   - **Aviso previo con grill-me**: Si en algún momento se considera recomendable o necesaria una verificación extensa (ej. antes de una release o tras reestructurar la arquitectura), se avisará al usuario mediante `ask_question` (/grill-me) para que él decida si procede o no. Si no lo autoriza expresamente, se omiten al 100%.
 
 ---
 
