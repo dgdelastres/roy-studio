@@ -4,6 +4,21 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
 
 ---
 
+## [Unreleased / v1.0.2] — 2026-11-16
+
+### 🚀 Novedades y Mejoras
+1. **Modo de Enrutamiento en Ángulos Libres / Diagonales y Ortogonal 90° (Estilo AutoCAD ORTHO)**:
+   - **Componentes**: `src/core/roy-engine/types.ts`, `src/components/roy-canvas/RoyEdge.tsx`, `src/components/roy-canvas/RoyCanvas.tsx`, `src/components/edge-dialog/EdgeModal.tsx`, `src/App.tsx`.
+   - **Trazado Híbrido Inteligente**:
+     - Por defecto en modo diagonal: la línea va en recta diagonal directa de nodo a nodo (`getStraightPath`), eliminando completamente los codos de 90° que provocan cruces confusos y solapamientos.
+     - Si se arrastra manualmente el tirador de la arista: se transforma en una polilínea libre orientable hacia el punto intermedio (waypoint `source -> mid -> target`) con uniones redondeadas (`strokeLinejoin="round"`), permitiendo esquivar nodos y ordenar el diagrama con total libertad.
+     - Botón de restablecimiento rápido (`RotateCcw`) y doble clic en el tirador para regresar al trazado directo instantáneamente.
+   - **Conmutador Rápido en Lienzo**: Selector en la barra flotante superior del Lienzo ROY (`Ortogonal (90°)` vs `Diagonales`), con persistencia en `localStorage`.
+   - **Atajo de Teclado F8 (como en AutoCAD)**: Presionar la tecla `F8` conmuta inmediatamente entre el modo Ortogonal (ORTHO) y el modo Ángulos Libres en todo el diagrama.
+   - **Configuración Individual por Ligadura**: En el modal de edición de aristas (`EdgeModal`), el usuario puede forzar el trazado de una ligadura específica a `Ortogonal`, `Diagonal` o `Predeterminado del lienzo`.
+
+---
+
 ## [v1.0.1] — 2026-11-15 (Release Oficial)
 
 ### 🚀 Novedades y Mejoras Consolidadas

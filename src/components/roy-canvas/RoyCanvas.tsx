@@ -32,6 +32,8 @@ import {
   PlusCircle,
   Sparkles,
   Upload,
+  CornerDownRight,
+  MoveDiagonal,
 } from 'lucide-react';
 
 interface RoyCanvasProps {
@@ -56,7 +58,13 @@ interface RoyCanvasProps {
     sourceHandle?: string,
     targetHandle?: string
   ) => void;
-  onEditDependency?: (targetId: string, predecessorId: string, type: DependencyType, lag: number) => void;
+  onEditDependency?: (
+    targetId: string,
+    predecessorId: string,
+    type: DependencyType,
+    lag: number,
+    routingType?: 'default' | 'orthogonal' | 'free'
+  ) => void;
   onLoadPilpisTemplate?: () => void;
   onOpenImportModal?: () => void;
   hasCycle?: boolean;
@@ -138,6 +146,40 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [edgeCenterXs, setEdgeCenterXs] = useState<Record<string, number>>({});
   const [edgeCenterYs, setEdgeCenterYs] = useState<Record<string, number>>({});
+
+  // Modo de enrutamiento global (Ortogonal 90° vs Ángulos Libres / Diagonal tipo AutoCAD ORTHO / F8)
+  const [globalRoutingMode, setGlobalRoutingMode] = useState<'orthogonal' | 'free'>(() => {
+    try {
+      const saved = localStorage.getItem('roy_edge_routing_mode');
+      return saved === 'free' ? 'free' : 'orthogonal';
+    } catch {
+      return 'orthogonal';
+    }
+  });
+
+  const toggleRoutingMode = useCallback((mode?: 'orthogonal' | 'free') => {
+    setGlobalRoutingMode(prev => {
+      const next = mode ?? (prev === 'orthogonal' ? 'free' : 'orthogonal');
+      try {
+        localStorage.setItem('roy_edge_routing_mode', next);
+      } catch {
+        // Ignorar si localStorage está deshabilitado
+      }
+      return next;
+    });
+  }, []);
+
+  // Atajo de teclado F8: alternar modo Ortogonal / Ángulos Libres (como en AutoCAD)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F8') {
+        e.preventDefault();
+        toggleRoutingMode();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleRoutingMode]);
 
   // Borrado directo de ligaduras con tecla Supr / Backspace
   const handleEdgesDelete = useCallback(
@@ -262,6 +304,12 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
           dep.targetHandle
         );
 
+        const isFree =
+          dep.routingType === 'free' ||
+          (!dep.routingType && globalRoutingMode === 'free') ||
+          (dep.routingType === 'default' && globalRoutingMode === 'free');
+        const resolvedRouting = isFree ? 'straight' : 'smoothstep';
+
         edgesList.push({
           id: edgeId,
           source: dep.predecessorId,
@@ -274,9 +322,10 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
             type: dep.type,
             lag: dep.lag,
             isCritical: critical,
+            routingType: resolvedRouting,
             customCenterX: edgeCenterXs[edgeId],
             customCenterY: edgeCenterYs[edgeId],
-            onDoubleClick: () => onEditDependency?.(task.id, dep.predecessorId, dep.type, dep.lag),
+            onDoubleClick: () => onEditDependency?.(task.id, dep.predecessorId, dep.type, dep.lag, dep.routingType),
             onUpdateCenter: (newX: number | undefined, newY: number | undefined) =>
               handleUpdateEdgeCenter(edgeId, newX, newY),
           },
@@ -290,7 +339,7 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
       });
     });
     return edgesList;
-  }, [tasks, isCriticalEdge, onEditDependency, edgeCenterXs, edgeCenterYs, handleUpdateEdgeCenter]);
+  }, [tasks, isCriticalEdge, onEditDependency, edgeCenterXs, edgeCenterYs, handleUpdateEdgeCenter, globalRoutingMode]);
 
   const initialNodes: Node[] = useMemo(() => {
     const rawNodes: Node[] = tasks.map(task => ({
@@ -449,9 +498,11 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
       const edgeData = edge.data as Record<string, unknown> | undefined;
       const type = (edgeData?.type as DependencyType) || 'FC';
       const lag = (edgeData?.lag as number) || 0;
-      onEditDependency?.(edge.target, edge.source, type, lag);
+      const targetTask = tasks.find(t => t.id === edge.target);
+      const dep = targetTask?.dependencies.find(d => d.predecessorId === edge.source);
+      onEditDependency?.(edge.target, edge.source, type, lag, dep?.routingType);
     },
-    [onEditDependency]
+    [tasks, onEditDependency]
   );
 
   // Manejador de click derecho sobre el lienzo
@@ -534,6 +585,38 @@ const RoyCanvasContent: React.FC<RoyCanvasProps> = ({
 
       {/* Barra flotante superior */}
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-lg">
+        {/* Selector de modo de trazado (AutoCAD ORTHO / F8 vs Ángulos Libres) */}
+        <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+          <button
+            type="button"
+            onClick={() => toggleRoutingMode('orthogonal')}
+            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all cursor-pointer ${
+              globalRoutingMode === 'orthogonal'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+            }`}
+            title="Modo Ortogonal (90°): Aristas en ángulo recto con codos redondeados (AutoCAD ORTHO). Atajo: Pulsa F8 para alternar."
+          >
+            <CornerDownRight className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Ortogonal</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleRoutingMode('free')}
+            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all cursor-pointer ${
+              globalRoutingMode === 'free'
+                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+            }`}
+            title="Modo Ángulos Libres: Líneas diagonales directas y orientables con tirador manual para evitar solapes de codos. Atajo: Pulsa F8 para alternar."
+          >
+            <MoveDiagonal className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Diagonales</span>
+          </button>
+        </div>
+
+        <div className="w-[1px] h-5 bg-slate-200 dark:bg-slate-700 mx-0.5" />
+
         <button
           onClick={() => fitView({ padding: 0.2, duration: 400 })}
           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"

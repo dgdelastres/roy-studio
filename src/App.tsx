@@ -140,7 +140,8 @@ export const App: React.FC = () => {
     targetId: string,
     predecessorId: string,
     type: DependencyType,
-    lag: number
+    lag: number,
+    routingType?: 'default' | 'orthogonal' | 'free'
   ) => {
     const pred = tasks.find(t => t.id === predecessorId);
     const target = tasks.find(t => t.id === targetId);
@@ -151,6 +152,7 @@ export const App: React.FC = () => {
       predecessorName: pred?.name || predecessorId,
       type,
       lag,
+      routingType,
     });
     setIsEdgeModalOpen(true);
   };
@@ -159,7 +161,8 @@ export const App: React.FC = () => {
     targetId: string,
     predecessorId: string,
     type: DependencyType,
-    lag: number
+    lag: number,
+    routingType?: 'default' | 'orthogonal' | 'free'
   ) => {
     setTasks(prev =>
       prev.map(t => {
@@ -167,7 +170,7 @@ export const App: React.FC = () => {
           return {
             ...t,
             dependencies: t.dependencies.map(d =>
-              d.predecessorId === predecessorId ? { ...d, type, lag } : d
+              d.predecessorId === predecessorId ? { ...d, type, lag, routingType } : d
             ),
           };
         }

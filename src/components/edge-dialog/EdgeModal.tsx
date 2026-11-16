@@ -8,6 +8,9 @@ import {
   X,
   Clock,
   Info,
+  Layers,
+  CornerDownRight,
+  MoveDiagonal,
 } from 'lucide-react';
 
 export interface EdgeEditData {
@@ -17,13 +20,20 @@ export interface EdgeEditData {
   predecessorName: string;
   type: DependencyType;
   lag: number;
+  routingType?: 'default' | 'orthogonal' | 'free';
 }
 
 interface EdgeModalProps {
   isOpen: boolean;
   onClose: () => void;
   edgeData: EdgeEditData | null;
-  onUpdateDependency: (targetId: string, predecessorId: string, type: DependencyType, lag: number) => void;
+  onUpdateDependency: (
+    targetId: string,
+    predecessorId: string,
+    type: DependencyType,
+    lag: number,
+    routingType?: 'default' | 'orthogonal' | 'free'
+  ) => void;
   onDeleteDependency: (targetId: string, predecessorId: string) => void;
 }
 
@@ -36,18 +46,20 @@ export const EdgeModal: React.FC<EdgeModalProps> = ({
 }) => {
   const [type, setType] = useState<DependencyType>('FC');
   const [lag, setLag] = useState<number>(0);
+  const [routingType, setRoutingType] = useState<'default' | 'orthogonal' | 'free'>('default');
 
   useEffect(() => {
     if (edgeData) {
       setType(edgeData.type);
       setLag(edgeData.lag);
+      setRoutingType(edgeData.routingType || 'default');
     }
   }, [edgeData]);
 
   if (!isOpen || !edgeData) return null;
 
   const handleSave = () => {
-    onUpdateDependency(edgeData.targetId, edgeData.predecessorId, type, lag);
+    onUpdateDependency(edgeData.targetId, edgeData.predecessorId, type, lag, routingType);
     onClose();
   };
 
@@ -221,6 +233,58 @@ export const EdgeModal: React.FC<EdgeModalProps> = ({
               <Info className="w-3 h-3 shrink-0" />
               Valores positivos representan retardos; valores negativos representan solapes o adelantos.
             </p>
+          </div>
+
+          {/* Selector de trazado específico de esta ligadura */}
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1.5">
+              <Layers className="w-3.5 h-3.5 text-slate-400" />
+              Trazado geométrico de la línea:
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setRoutingType('default')}
+                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  routingType === 'default'
+                    ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 ring-2 ring-blue-500/20 text-blue-700 dark:text-blue-300 font-bold'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/40 text-slate-600 dark:text-slate-400 font-medium'
+                } text-xs flex flex-col items-center gap-1`}
+              >
+                <span className="text-[11px]">Predeterminado</span>
+                <span className="text-[9px] text-slate-400 font-normal">Sigue al lienzo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoutingType('orthogonal')}
+                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  routingType === 'orthogonal'
+                    ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 ring-2 ring-blue-500/20 text-blue-700 dark:text-blue-300 font-bold'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/40 text-slate-600 dark:text-slate-400 font-medium'
+                } text-xs flex flex-col items-center gap-1`}
+              >
+                <div className="flex items-center gap-1 text-[11px]">
+                  <CornerDownRight className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                  <span>Ortogonal</span>
+                </div>
+                <span className="text-[9px] text-slate-400 font-normal">Codos de 90°</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoutingType('free')}
+                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  routingType === 'free'
+                    ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 ring-2 ring-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/40 text-slate-600 dark:text-slate-400 font-medium'
+                } text-xs flex flex-col items-center gap-1`}
+              >
+                <div className="flex items-center gap-1 text-[11px]">
+                  <MoveDiagonal className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  <span>Diagonal</span>
+                </div>
+                <span className="text-[9px] text-slate-400 font-normal">Ángulo libre</span>
+              </button>
+            </div>
           </div>
         </div>
 

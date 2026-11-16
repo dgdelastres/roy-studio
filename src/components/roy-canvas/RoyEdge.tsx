@@ -3,19 +3,20 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getSmoothStepPath,
+  getStraightPath,
   getBezierPath,
   EdgeProps,
   Position,
   useReactFlow,
 } from '@xyflow/react';
 import { DependencyType } from '../../core/roy-engine/types';
-import { Move } from 'lucide-react';
+import { Move, RotateCcw } from 'lucide-react';
 
 export interface RoyEdgeData {
   type: DependencyType;
   lag: number;
   isCritical?: boolean;
-  routingType?: 'smoothstep' | 'bezier';
+  routingType?: 'smoothstep' | 'straight' | 'free' | 'bezier';
   customCenterX?: number;
   customCenterY?: number;
   onDoubleClick?: () => void;
@@ -66,8 +67,29 @@ export const RoyEdge = memo(({
     edgePath = bPath;
     labelX = bx;
     labelY = by;
+  } else if (routingType === 'straight' || routingType === 'free') {
+    const hasCustomBend = customCenterX !== undefined || customCenterY !== undefined;
+    if (hasCustomBend) {
+      const midX = customCenterX ?? Math.round((sourceX + targetX) / 2);
+      const midY = customCenterY ?? Math.round((sourceY + targetY) / 2);
+      // Quiebre diagonal libre (polilínea hacia el tirador intermedio arrastrado)
+      edgePath = `M ${sourceX},${sourceY} L ${midX},${midY} L ${targetX},${targetY}`;
+      labelX = midX;
+      labelY = midY;
+    } else {
+      // Línea diagonal directa de nodo a nodo (sin codos de 90° para evitar solapes)
+      const [sPath, sx, sy] = getStraightPath({
+        sourceX,
+        sourceY,
+        targetX,
+        targetY,
+      });
+      edgePath = sPath;
+      labelX = sx;
+      labelY = sy;
+    }
   } else {
-    // Trazado ortogonal limpio por defecto (tipo ingeniería)
+    // Trazado ortogonal limpio por defecto (tipo ingeniería 90° / AutoCAD ORTHO)
     const [stepPath, sx, sy] = getSmoothStepPath({
       sourceX,
       sourceY,
@@ -198,6 +220,8 @@ export const RoyEdge = memo(({
           ...style,
           stroke: activeStroke,
           strokeWidth,
+          strokeLinejoin: 'round',
+          strokeLinecap: 'round',
           filter: selected
             ? (isCritical ? 'drop-shadow(0 0 5px rgba(220,38,38,0.75))' : 'drop-shadow(0 0 5px rgba(37,99,235,0.75))')
             : undefined,
@@ -244,27 +268,39 @@ export const RoyEdge = memo(({
             {labelText}
           </div>
 
-          {/* Tirador arrastrable para ajustar el quiebre/bloqueo de la ligadura */}
+          {/* Tirador arrastrable para ajustar el quiebre/orientación de la ligadura */}
           {(isHovered || isDraggingBend || selected || customCenterX !== undefined || customCenterY !== undefined) && (
-            <div
-              onPointerDown={handlePointerDownBend}
-              onPointerMove={handlePointerMoveBend}
-              onPointerUp={handlePointerUpBend}
-              onDoubleClick={handleResetBend}
-              className={`p-1 rounded-md border text-[10px] shadow-md transition-all cursor-move flex items-center justify-center ${
-                isDraggingBend
-                  ? 'bg-blue-600 text-white border-blue-700 ring-2 ring-blue-400 scale-125'
-                  : (customCenterX !== undefined || customCenterY !== undefined)
-                  ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300'
-                  : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600'
-              }`}
-              title={
-                (customCenterX !== undefined || customCenterY !== undefined)
-                  ? `Quiebre fijado en (x=${customCenterX ?? 'auto'}, y=${customCenterY ?? 'auto'}). Arrastra para mover; doble clic para centrar automáticamente.`
-                  : 'Arrastra este tirador para moldear el quiebre de la ligadura en horizontal y vertical; doble clic para centrar.'
-              }
-            >
-              <Move className="w-3 h-3" />
+            <div className="flex items-center gap-0.5">
+              <div
+                onPointerDown={handlePointerDownBend}
+                onPointerMove={handlePointerMoveBend}
+                onPointerUp={handlePointerUpBend}
+                onDoubleClick={handleResetBend}
+                className={`p-1 rounded-md border text-[10px] shadow-md transition-all cursor-move flex items-center justify-center ${
+                  isDraggingBend
+                    ? 'bg-blue-600 text-white border-blue-700 ring-2 ring-blue-400 scale-125'
+                    : (customCenterX !== undefined || customCenterY !== undefined)
+                    ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300'
+                    : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600'
+                }`}
+                title={
+                  (customCenterX !== undefined || customCenterY !== undefined)
+                    ? `Quiebre fijado en (x=${customCenterX ?? 'auto'}, y=${customCenterY ?? 'auto'}). Arrastra para orientar libremente; doble clic para restablecer.`
+                    : 'Arrastra este tirador para orientar el quiebre de la arista y evitar solapamientos; doble clic para centrar.'
+                }
+              >
+                <Move className="w-3 h-3" />
+              </div>
+              {(customCenterX !== undefined || customCenterY !== undefined) && (
+                <button
+                  type="button"
+                  onClick={handleResetBend}
+                  className="p-1 rounded-md border text-[10px] shadow-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                  title="Restablecer a trazado directo sin quiebre manual"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                </button>
+              )}
             </div>
           )}
         </div>
