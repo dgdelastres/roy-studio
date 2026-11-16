@@ -15,6 +15,7 @@ import { ImportModal } from './components/import-dialog/ImportModal';
 import { EdgeModal, EdgeEditData } from './components/edge-dialog/EdgeModal';
 import { DepartmentModal } from './components/department-dialog/DepartmentModal';
 import { CalendarModal } from './components/calendar-dialog/CalendarModal';
+import { VesselStudio } from './components/vessel-calculator/VesselStudio';
 import { LayoutDirection } from './components/roy-canvas/layout';
 import { exportTasksToExcel } from './utils/export/exportExcel';
 import { exportProjectReportPdf } from './utils/export/exportPdf';
@@ -25,7 +26,7 @@ export const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [departments, setDepartments] = useState<Department[]>(PILPIS_DEPARTMENTS);
   const [calendar, setCalendar] = useState<ProjectCalendar>(DEFAULT_PROJECT_CALENDAR);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('roy');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('recipientes');
   const [viewMode, setViewMode] = useState<'full' | 'compact'>('full');
   const [direction, setDirection] = useState<LayoutDirection>('LR');
   const [isDark, setIsDark] = useState<boolean>(false);
@@ -335,7 +336,11 @@ export const App: React.FC = () => {
       />
 
       {/* Contenedor principal con persistencia de vistas en DOM para evitar desajustes de cámara (Punto 3) */}
-      <main className="flex-1 relative overflow-hidden">
+      <main className="flex-1 relative overflow-hidden flex flex-col">
+        <div className={`w-full h-full flex flex-col ${activeTab === 'recipientes' ? 'flex' : 'hidden'}`}>
+          <VesselStudio />
+        </div>
+
         <div className={`w-full h-full ${activeTab === 'roy' ? 'block' : 'hidden'}`}>
           <RoyCanvas
             tasks={calculation.tasks}

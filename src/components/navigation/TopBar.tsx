@@ -18,12 +18,13 @@ import {
   FileText,
   Image,
   Plus,
+  Cylinder,
 } from 'lucide-react';
 import { LayoutDirection } from '../roy-canvas/layout';
 import { ProjectCalendar } from '../../core/roy-engine/types';
 import { getTimeUnitLabel, getTimeUnitShort } from '../../core/roy-engine/calendar';
 
-export type ActiveTab = 'roy' | 'gantt' | 'table' | 'calendar';
+export type ActiveTab = 'recipientes' | 'roy' | 'gantt' | 'table' | 'calendar';
 
 interface TopBarProps {
   activeTab: ActiveTab;
@@ -120,6 +121,17 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* Tab navigation */}
         <div className="flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-semibold">
+          <button
+            onClick={() => setActiveTab('recipientes')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all ${
+              activeTab === 'recipientes'
+                ? 'bg-blue-600 text-white shadow-xs font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Cylinder className="w-3.5 h-3.5" />
+            Recipientes ASME VIII
+          </button>
           <button
             onClick={() => setActiveTab('roy')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all ${
