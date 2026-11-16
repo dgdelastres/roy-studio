@@ -6,7 +6,6 @@ import {
   Sparkles,
   X,
   CheckCircle2,
-  Clock,
   ArrowRight,
 } from 'lucide-react';
 
