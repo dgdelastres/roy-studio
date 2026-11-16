@@ -25,6 +25,7 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
    - **Filtro de Camino Crítico**: Botón para aislar o destacar tareas críticas ($HT = 0$).
    - **Conmutador Cuadrícula / Agenda**: Permite alternar entre el almanaque visual de días y la lista estructurada cronológica con responsables, fechas y duraciones.
    - **Interactividad y Edición**: Al hacer clic en cualquier tarea se abre el modal de edición (`TaskModal`). En vista cuadrícula, hacer clic en un día despliega un panel lateral con el detalle de actividades de esa fecha.
+   - **Exclusión de Días No Laborables**: Las tareas se asignan y muestran exclusivamente en las jornadas hábiles de trabajo. Los fines de semana y festivos oficiales quedan completamente despejados de tareas con etiquetas identificativas de `Inhábil` o el nombre del festivo correspondiente.
 
 ---
 

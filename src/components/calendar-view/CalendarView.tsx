@@ -183,21 +183,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       const dayOfWeek = d.getDay();
       const isWork = calendar.workDays.includes(dayOfWeek);
       const holiday = calendar.holidays.find(h => h.date === dateStr);
+      const isActualWorkDay = isWork && !holiday;
 
-      // Tareas que caen o están activas en este día específico
+      // Tareas que caen o están activas en este día específico (exclusivamente en días laborables hábiles)
       const dayStart = new Date(currentYear, currentMonth, dNum, 0, 0, 0).getTime();
       const dayEnd = new Date(currentYear, currentMonth, dNum, 23, 59, 59).getTime();
 
-      const dayTasks = tasksInMonth.filter(pt => {
-        return pt.endDate.getTime() >= dayStart && pt.startDate.getTime() <= dayEnd;
-      });
+      const dayTasks = isActualWorkDay
+        ? tasksInMonth.filter(pt => {
+            return pt.endDate.getTime() >= dayStart && pt.startDate.getTime() <= dayEnd;
+          })
+        : [];
 
       cells.push({
         dayNumber: dNum,
         isCurrentMonth: true,
         date: d,
         dateStr,
-        isWorkDay: isWork && !holiday,
+        isWorkDay: isActualWorkDay,
         holidayName: holiday?.name,
         tasks: dayTasks,
       });
@@ -510,12 +513,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       )}
                     </div>
 
-                    {/* Etiqueta de Festivo si aplica */}
-                    {hasHoliday && cell.tasks.length === 0 && (
+                    {/* Etiqueta de Festivo o Día Inhábil si aplica */}
+                    {hasHoliday ? (
                       <div className="text-[9px] font-semibold text-amber-700 dark:text-amber-400 truncate px-1 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/60">
                         {cell.holidayName}
                       </div>
-                    )}
+                    ) : !cell.isWorkDay && cell.isCurrentMonth ? (
+                      <div className="text-[9px] text-slate-400 dark:text-slate-500 italic text-center py-0.5">
+                        Inhábil
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
@@ -654,7 +661,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
             {selectedDayCell.tasks.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-400">
-                No hay tareas programadas para este día.
+                {!selectedDayCell.isWorkDay
+                  ? 'Día no laborable / descanso oficial (sin tareas asignadas).'
+                  : 'No hay tareas programadas para este día.'}
               </div>
             ) : (
               <div className="space-y-2.5">
