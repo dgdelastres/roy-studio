@@ -23,7 +23,7 @@ import { LayoutDirection } from '../roy-canvas/layout';
 import { ProjectCalendar } from '../../core/roy-engine/types';
 import { getTimeUnitLabel, getTimeUnitShort } from '../../core/roy-engine/calendar';
 
-export type ActiveTab = 'roy' | 'gantt' | 'table';
+export type ActiveTab = 'roy' | 'gantt' | 'table' | 'calendar';
 
 interface TopBarProps {
   activeTab: ActiveTab;
@@ -144,7 +144,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('table')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all cursor-pointer ${
               activeTab === 'table'
                 ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -152,6 +152,17 @@ export const TopBar: React.FC<TopBarProps> = ({
           >
             <TableIcon className="w-3.5 h-3.5" />
             Tabla
+          </button>
+          <button
+            onClick={() => setActiveTab('calendar')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all cursor-pointer ${
+              activeTab === 'calendar'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            Calendario
           </button>
         </div>
       </div>

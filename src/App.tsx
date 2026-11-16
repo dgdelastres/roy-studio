@@ -9,6 +9,7 @@ import { TopBar, ActiveTab } from './components/navigation/TopBar';
 import { RoyCanvas } from './components/roy-canvas/RoyCanvas';
 import { GanttView } from './components/gantt/GanttView';
 import { TaskTable } from './components/task-table/TaskTable';
+import { CalendarView } from './components/calendar-view/CalendarView';
 import { TaskModal } from './components/task-dialog/TaskModal';
 import { ImportModal } from './components/import-dialog/ImportModal';
 import { EdgeModal, EdgeEditData } from './components/edge-dialog/EdgeModal';
@@ -394,6 +395,18 @@ export const App: React.FC = () => {
               setIsModalOpen(true);
             }}
             onDuplicateTask={handleDuplicateTask}
+          />
+        </div>
+
+        <div className={`w-full h-full ${activeTab === 'calendar' ? 'block' : 'hidden'}`}>
+          <CalendarView
+            tasks={calculation.tasks}
+            departments={departments}
+            calendar={calendar}
+            onEditTask={task => {
+              setTaskToEdit(task);
+              setIsModalOpen(true);
+            }}
           />
         </div>
       </main>

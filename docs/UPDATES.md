@@ -17,6 +17,15 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
    - **Atajo de Teclado F8 (como en AutoCAD)**: Presionar la tecla `F8` conmuta inmediatamente entre el modo Ortogonal (ORTHO) y el modo Ángulos Libres en todo el diagrama.
    - **Configuración Individual por Ligadura**: En el modal de edición de aristas (`EdgeModal`), el usuario puede forzar el trazado de una ligadura específica a `Ortogonal`, `Diagonal` o `Predeterminado del lienzo`.
 
+2. **Nueva Vista de Calendario de Planificación del Proyecto (Almanaque Mensual + Agenda por Departamentos)**:
+   - **Componentes**: `src/components/calendar-view/CalendarView.tsx`, `src/components/navigation/TopBar.tsx`, `src/App.tsx`.
+   - **Navegación Integrada**: Nueva 4ª pestaña principal en la barra superior (`[Red ROY] [Gantt] [Tabla] [Calendario]`).
+   - **Cuadrícula Mensual (Almanaque)**: Vista mensual completa (7 columnas, Lun a Dom) con las tareas ubicadas en sus días reales de ejecución, festivos destacados con icono de destello y días inhábiles atenuados.
+   - **Filtro Interactivo por Departamentos**: Barra de pills con los colores identificativos y códigos de cada departamento (`D1-PROC`, `D2-RECIP`, etc.) con contador dinámico de tareas activas en el mes seleccionado.
+   - **Filtro de Camino Crítico**: Botón para aislar o destacar tareas críticas ($HT = 0$).
+   - **Conmutador Cuadrícula / Agenda**: Permite alternar entre el almanaque visual de días y la lista estructurada cronológica con responsables, fechas y duraciones.
+   - **Interactividad y Edición**: Al hacer clic en cualquier tarea se abre el modal de edición (`TaskModal`). En vista cuadrícula, hacer clic en un día despliega un panel lateral con el detalle de actividades de esa fecha.
+
 ---
 
 ## [v1.0.1] — 2026-11-15 (Release Oficial)
