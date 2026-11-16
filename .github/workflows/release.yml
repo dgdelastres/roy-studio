@@ -1,9 +1,10 @@
-name: Release ROY Studio
+name: Release PILPIS Vessel Studio
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*-recipientes'
+      - 'vessel-*'
 
 permissions:
   contents: write
@@ -41,6 +42,7 @@ jobs:
       - name: Publicar Release Oficial con Ejecutable Adjunto
         uses: softprops/action-gh-release@v2
         with:
+          name: PILPIS Vessel Studio v1.0.0 (ASME VIII Div. 1)
           files: dist-win/*.exe
           generate_release_notes: true
           draft: false
