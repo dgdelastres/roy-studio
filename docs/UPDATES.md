@@ -4,9 +4,9 @@ Documento vivo de registro técnico de cambios, nuevas características y mejora
 
 ---
 
-## [Unreleased / v1.0.2] — 2026-11-16
+## [v1.0.2] — 2026-11-16 (Release Oficial)
 
-### 🚀 Novedades y Mejoras
+### 🚀 Novedades y Mejoras Consolidadas
 1. **Modo de Enrutamiento en Ángulos Libres / Diagonales y Ortogonal 90° (Estilo AutoCAD ORTHO)**:
    - **Componentes**: `src/core/roy-engine/types.ts`, `src/components/roy-canvas/RoyEdge.tsx`, `src/components/roy-canvas/RoyCanvas.tsx`, `src/components/edge-dialog/EdgeModal.tsx`, `src/App.tsx`.
    - **Trazado Híbrido Inteligente**:

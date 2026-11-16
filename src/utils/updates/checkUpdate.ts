@@ -14,7 +14,7 @@ export interface UpdateInfo {
   hasUpdate: boolean;
 }
 
-export const CURRENT_VERSION = '1.0.1';
+export const CURRENT_VERSION = '1.0.2';
 export const GITHUB_REPO = 'dgdelastres/roy-studio';
 
 /**
