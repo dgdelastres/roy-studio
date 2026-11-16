@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 >nul
-title ROY Studio — Empaquetador Portable Windows (.exe)
+title PILPIS Vessel Studio — Empaquetador Portable Windows (.exe)
 color 0B
 cls
 echo ===============================================================================
-echo                ROY STUDIO — EMPAQUETADOR PORTABLE WINDOWS (.EXE)
+echo            PILPIS VESSEL STUDIO — EMPAQUETADOR PORTABLE WINDOWS (.EXE)
 echo ===============================================================================
 echo.
 echo [1/2] Compilando bundles de produccion (TypeScript + Vite)...

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Cylinder,
   CircleDot,
@@ -13,8 +13,20 @@ import {
   Scale,
   Droplets,
   Gauge,
-  Sparkles
+  Sparkles,
+  FolderDown,
+  FolderUp,
+  Plus,
+  Trash2,
+  Sun,
+  Moon,
+  RotateCcw
 } from 'lucide-react';
+
+export interface VesselStudioProps {
+  isDark?: boolean;
+  onToggleDark?: () => void;
+}
 
 export type VesselGeometry = 'horizontal' | 'vertical' | 'esferico';
 export type HeadType = 'eliptico_2_1' | 'toriesferico' | 'semiesferico' | 'plano';
@@ -176,15 +188,45 @@ function redondearComercial(t: number): number {
   return Math.ceil(t);
 }
 
-export const VesselStudio: React.FC = () => {
-  const [activePreset, setActivePreset] = useState<string>('v100');
-  const [vessel, setVessel] = useState<VesselState>(PRESETS.v100);
+const DEFAULT_VESSELS: VesselState[] = [
+  PRESETS.v100,
+  PRESETS.v101,
+  PRESETS.v102,
+  PRESETS.tk100_esfera,
+];
+
+export const VesselStudio: React.FC<VesselStudioProps> = ({ isDark, onToggleDark }) => {
+  const [vessels, setVessels] = useState<VesselState[]>(() => {
+    try {
+      const saved = localStorage.getItem('pilpis_vessels_library');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_VESSELS;
+  });
+
+  const [activeVesselIndex, setActiveVesselIndex] = useState<number>(0);
+  const vessel = vessels[activeVesselIndex] || vessels[0] || PRESETS.v100;
   const [activeSubTab, setActiveSubTab] = useState<'esquema' | 'calculos' | 'comparativa'>('esquema');
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Días para comparativa interactiva
   const [diasAlmacenamiento, setDiasAlmacenamiento] = useState<number>(15);
+
+  // Guardar en localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('pilpis_vessels_library', JSON.stringify(vessels));
+    } catch {
+      // ignore
+    }
+  }, [vessels]);
 
   // Verificar backend
   useEffect(() => {
@@ -196,13 +238,99 @@ export const VesselStudio: React.FC = () => {
       .catch(() => setBackendOnline(false));
   }, []);
 
-  const handleSelectPreset = (key: string) => {
-    setActivePreset(key);
-    setVessel(PRESETS[key]);
+  const updateVessel = (field: keyof VesselState, value: any) => {
+    setVessels(prev => {
+      const copy = [...prev];
+      copy[activeVesselIndex] = { ...copy[activeVesselIndex], [field]: value };
+      return copy;
+    });
   };
 
-  const updateVessel = (field: keyof VesselState, value: any) => {
-    setVessel(prev => ({ ...prev, [field]: value }));
+  const handleAddVessel = () => {
+    const nextNum = vessels.length + 1;
+    const newVessel: VesselState = {
+      ...PRESETS.personalizado,
+      tag: `V-${100 + vessels.length}`,
+      nombre: `Nuevo Recipiente ${nextNum}`,
+      servicio: 'Nuevo servicio de proceso',
+    };
+    setVessels(prev => [...prev, newVessel]);
+    setActiveVesselIndex(vessels.length);
+  };
+
+  const handleDuplicateVessel = () => {
+    const current = vessels[activeVesselIndex];
+    if (!current) return;
+    const copy: VesselState = {
+      ...current,
+      tag: `${current.tag}-B`,
+      nombre: `${current.nombre} (Copia)`,
+    };
+    setVessels(prev => [...prev, copy]);
+    setActiveVesselIndex(vessels.length);
+  };
+
+  const handleDeleteVessel = (idx: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (vessels.length <= 1) {
+      alert('El proyecto debe contener al menos un recipiente.');
+      return;
+    }
+    const targetTag = vessels[idx]?.tag || 'este equipo';
+    if (window.confirm(`¿Deseas eliminar el equipo ${targetTag} del proyecto?`)) {
+      setVessels(prev => prev.filter((_, i) => i !== idx));
+      setActiveVesselIndex(prev => (prev >= idx && prev > 0 ? prev - 1 : 0));
+    }
+  };
+
+  const handleExportProjectJson = () => {
+    const projectData = {
+      app: 'PILPIS Vessel Studio',
+      norma: 'ASME Boiler and Pressure Vessel Code Section VIII Division 1',
+      version: '1.0.0',
+      cliente: 'QUIMISUR S.A.',
+      proyecto: 'Planta de Fraccionamiento de C4 (San Roque, Cádiz)',
+      departamento: 'DPTO 2 — Gestión de Proyectos y Diseño de Recipientes',
+      empresa: 'PILPIS S.A.',
+      fechaExportacion: new Date().toISOString(),
+      recipientes: vessels,
+    };
+    const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Proyecto_Recipientes_PILPIS_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportProjectJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = event => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        if (parsed.recipientes && Array.isArray(parsed.recipientes) && parsed.recipientes.length > 0) {
+          setVessels(parsed.recipientes);
+          setActiveVesselIndex(0);
+          alert(`Proyecto importado con éxito: ${parsed.recipientes.length} recipientes cargados.`);
+        } else {
+          alert('El archivo no contiene una lista válida de recipientes en el campo "recipientes".');
+        }
+      } catch {
+        alert('Error al leer el archivo JSON.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleResetToPilpisDefaults = () => {
+    if (window.confirm('¿Deseas restaurar la lista oficial de recipientes del anteproyecto PILPIS (V-100, V-101, V-102 y TK-100)?')) {
+      setVessels(DEFAULT_VESSELS);
+      setActiveVesselIndex(0);
+    }
   };
 
   // -------------------------------------------------------------
@@ -405,80 +533,205 @@ Pesos: Vacío = ${resultados.pesoAceroKg.toLocaleString()} kg | Operación = ${r
   };
 
   const handleDownloadFile = (tipo: 'excel' | 'word') => {
-    const url = tipo === 'excel'
-      ? 'http://127.0.0.1:8000/api/descargar/excel-oficial'
-      : 'http://127.0.0.1:8000/api/descargar/word-oficial';
-
-    window.open(url, '_blank');
+    if (backendOnline) {
+      const url = tipo === 'excel'
+        ? 'http://127.0.0.1:8000/api/descargar/excel-oficial'
+        : 'http://127.0.0.1:8000/api/descargar/word-oficial';
+      window.open(url, '_blank');
+    } else {
+      alert(
+        `Para descargar el archivo oficial generado por Python (${tipo.toUpperCase()}):` +
+        `\n\n1. Inicia el servidor backend: uv run python diseno_recipientes/backend/api.py` +
+        `\n2. O abre directamente el archivo generado en tu Escritorio:` +
+        `\n   - Hojas_Especificacion_Recipientes_PILPIS.xlsx` +
+        `\n   - Memoria_Diseno_Recipientes_PILPIS.docx`
+      );
+    }
   };
 
   return (
     <div className="flex-1 flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 overflow-hidden font-sans">
-      {/* Subheader / Barra de Presets de Equipo */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-3 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      {/* Input oculto para cargar archivo de proyecto JSON */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImportProjectJson}
+        accept=".json"
+        className="hidden"
+      />
+
+      {/* Header Principal de la Aplicación */}
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-5 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-sm z-10">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-600 rounded-lg text-white shadow-md">
+          <div className="p-2 bg-blue-600 rounded-lg text-white shadow-md flex items-center justify-center">
             <Cylinder className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+              <h1 className="text-base font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
                 PILPIS Vessel Studio
-              </h2>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+              </h1>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
                 ASME VIII Div. 1
               </span>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                v1.0.0
+              </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Ingeniería Básica, Dimensionamiento Volumétrico y Resistencia Mecánica
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              PILPIS S.A. | Cliente: QUIMISUR S.A. — San Roque, Cádiz
             </p>
           </div>
         </div>
 
-        {/* Selector de Presets del Proyecto */}
-        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-lg border border-slate-200 dark:border-slate-700 overflow-x-auto">
-          {Object.entries(PRESETS).map(([key, p]) => (
-            <button
-              key={key}
-              onClick={() => handleSelectPreset(key)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                activePreset === key
-                  ? 'bg-blue-600 text-white shadow-sm font-semibold'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
-              }`}
-            >
-              {p.tipoGeometria === 'esferico' ? (
-                <CircleDot className="w-3.5 h-3.5" />
-              ) : (
-                <Cylinder className="w-3.5 h-3.5" />
-              )}
-              <span>{p.tag}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Estado y Acciones Rápidas */}
-        <div className="flex items-center gap-2">
-          {backendOnline === true ? (
-            <span className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Backend Conectado
-            </span>
-          ) : backendOnline === false ? (
-            <span className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-              Cálculo Local
-            </span>
-          ) : null}
+        {/* Acciones de Proyecto (Cargar, Guardar, Restaurar) */}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="Cargar proyecto desde archivo JSON"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors"
+          >
+            <FolderUp className="w-3.5 h-3.5 text-blue-500" />
+            <span>Cargar (.json)</span>
+          </button>
 
           <button
-            onClick={handleCopySummary}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors shadow-sm"
+            onClick={handleExportProjectJson}
+            title="Guardar todo el proyecto en archivo JSON"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? 'Copiado' : 'Copiar Resumen'}
+            <FolderDown className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Guardar (.json)</span>
+          </button>
+
+          <button
+            onClick={handleResetToPilpisDefaults}
+            title="Restaurar recipientes oficiales del anteproyecto"
+            className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-400 transition-colors"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600 mx-1" />
+
+          {/* Exportaciones Oficiales */}
+          <button
+            onClick={() => handleDownloadFile('excel')}
+            title="Descargar Hojas de Especificación de Datos en Excel"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 transition-colors"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Data Sheets Excel</span>
+          </button>
+
+          <button
+            onClick={() => handleDownloadFile('word')}
+            title="Descargar Memoria Técnica Justificativa de Recipientes en Word"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 transition-colors"
+          >
+            <FileText className="w-3.5 h-3.5 text-blue-600" />
+            <span>Memoria Word</span>
+          </button>
+
+          <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600 mx-1" />
+
+          {/* Estado del Backend */}
+          {backendOnline === true ? (
+            <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800" title="Servidor Python conectado en localhost:8000">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              API Online
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300" title="Cálculos ejecutados en el motor cliente TypeScript">
+              Motor Local
+            </span>
+          )}
+
+          {/* Toggle Tema Oscuro/Claro */}
+          {onToggleDark && (
+            <button
+              onClick={onToggleDark}
+              title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              className="p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors"
+            >
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Subheader: Biblioteca de Recipientes Activos */}
+      <div className="bg-slate-100/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 px-5 py-2 flex items-center justify-between gap-3 overflow-x-auto">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mr-1 flex items-center gap-1">
+            <Layers className="w-3.5 h-3.5 text-blue-500" />
+            Recipientes:
+          </span>
+
+          {vessels.map((v, idx) => {
+            const isActive = activeVesselIndex === idx;
+            return (
+              <div
+                key={`${v.tag}-${idx}`}
+                className={`group flex items-center gap-1.5 px-3 py-1 text-xs rounded-md transition-all border ${
+                  isActive
+                    ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-sm'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-400'
+                }`}
+              >
+                <button
+                  onClick={() => setActiveVesselIndex(idx)}
+                  className="flex items-center gap-1.5 cursor-pointer"
+                >
+                  {v.tipoGeometria === 'esferico' ? (
+                    <CircleDot className="w-3.5 h-3.5" />
+                  ) : (
+                    <Cylinder className="w-3.5 h-3.5" />
+                  )}
+                  <span>{v.tag || `Equipo ${idx + 1}`}</span>
+                </button>
+
+                {vessels.length > 1 && (
+                  <button
+                    onClick={e => handleDeleteVessel(idx, e)}
+                    title={`Eliminar ${v.tag}`}
+                    className={`ml-1 p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white ${
+                      isActive ? 'text-blue-200' : 'text-slate-400'
+                    }`}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          <button
+            onClick={handleAddVessel}
+            title="Añadir nuevo recipiente al proyecto"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Nuevo</span>
+          </button>
+
+          <button
+            onClick={handleDuplicateVessel}
+            title="Duplicar el recipiente actual"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          >
+            <Copy className="w-3 h-3" />
+            <span>Duplicar</span>
           </button>
         </div>
+
+        <button
+          onClick={handleCopySummary}
+          className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition-colors shadow-sm shrink-0"
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? 'Copiado' : 'Copiar Resumen'}
+        </button>
       </div>
 
       {/* Cuerpo Principal Dividido en Dos Columnas */}

@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 $logPath = "dist-win\build-silent.log"
 
 # Asegurar directorio de salida y cerrar instancias previas para liberar archivos
-Stop-Process -Name "ROY Studio*" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "*Studio*" -Force -ErrorAction SilentlyContinue
 Start-Sleep -Milliseconds 500
 
 if (-not (Test-Path "dist-win")) {
@@ -32,7 +32,7 @@ try {
     }
 
     # 3. Localizar binario generado
-    $exe = Get-ChildItem -Path "dist-win" -Filter "*.exe" | Where-Object { $_.Name -like "*ROY Studio*.exe" -and $_.Name -notlike "*unpacked*" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $exe = Get-ChildItem -Path "dist-win" -Filter "*.exe" | Where-Object { ($_.Name -like "*Vessel Studio*.exe" -or $_.Name -like "*ROY Studio*.exe") -and $_.Name -notlike "*unpacked*" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 
     if ($exe) {
         $mb = [math]::Round($exe.Length / 1MB, 2)

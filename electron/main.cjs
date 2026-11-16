@@ -9,7 +9,7 @@ function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: 'ROY Studio — Generador de Diagramas ROY y GANTT (PILPIS)',
+    title: 'PILPIS Vessel Studio — Calculadora ASME VIII Div. 1 & Data Sheets',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

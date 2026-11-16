@@ -1,10 +1,10 @@
 {
-  "name": "roy-studio",
-  "version": "1.0.1",
+  "name": "vessel-studio",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
-  "description": "Aplicación para generación y análisis de Diagramas ROY y GANTT para Proyectos de Ingeniería",
+  "description": "PILPIS Vessel Studio — Calculadora de Recipientes a Presion ASME VIII Div. 1, Planos Parametricos y Data Sheets",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -49,8 +49,8 @@
     "vitest": "^2.1.5"
   },
   "build": {
-    "appId": "com.pilpis.roystudio",
-    "productName": "ROY Studio",
+    "appId": "com.pilpis.vesselstudio",
+    "productName": "Vessel Studio",
     "directories": {
       "output": "dist-win"
     },
