@@ -32,7 +32,7 @@ try {
     }
 
     # 3. Localizar binario generado
-    $exe = Get-ChildItem -Path "dist-win" -Filter "*.exe" | Where-Object { $_.Name -like "*ROY Studio*portable*.exe" -or $_.Name -eq "ROY Studio 1.0.0.exe" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $exe = Get-ChildItem -Path "dist-win" -Filter "*.exe" | Where-Object { $_.Name -like "*ROY Studio*.exe" -and $_.Name -notlike "*unpacked*" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 
     if ($exe) {
         $mb = [math]::Round($exe.Length / 1MB, 2)
