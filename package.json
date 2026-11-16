@@ -4,7 +4,13 @@
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
-  "description": "Aplicación para generación y análisis de Diagramas ROY y GANTT para Proyectos de Ingeniería",
+  "description": "Aplicación para formulación, análisis de grafos ROY (MPM), programación Gantt y gestión de proyectos industriales",
+  "author": "Daniel García de Lastres <d.gdelastres@gmail.com>",
+  "homepage": "https://github.com/dgdelastres/roy-studio",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dgdelastres/roy-studio.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -49,17 +55,24 @@
     "vitest": "^2.1.5"
   },
   "build": {
-    "appId": "com.pilpis.roystudio",
+    "appId": "com.dgdelastres.roystudio",
     "productName": "ROY Studio",
+    "copyright": "Copyright © 2026 Daniel García de Lastres",
     "directories": {
       "output": "dist-win"
     },
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "build/icon.ico",
+      "build/icon.png",
+      "public/**/*",
       "package.json"
     ],
     "win": {
+      "icon": "build/icon.ico",
+      "legalTrademarks": "ROY Studio",
+      "requestedExecutionLevel": "asInvoker",
       "target": "portable"
     }
   }

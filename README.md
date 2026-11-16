@@ -105,5 +105,17 @@ npm run build
 
 ---
 
+## 🛡️ Nota sobre la descarga en Windows (SmartScreen)
+Al ser una aplicación de ingeniería independiente y de código abierto sin un certificado corporativo comercial de pago anual (Microsoft Code Signing), la primera vez que descargues el ejecutable (`.exe`) desde las [Releases de GitHub](https://github.com/dgdelastres/roy-studio/releases), Windows Defender SmartScreen puede mostrar una pantalla preventiva azul:
+> *"Windows protegió su PC (Editor desconocido)"*
+
+**Para iniciar la aplicación con total normalidad:**
+1. Haz clic en el texto **"Más información"**.
+2. Pulsa en el botón **"Ejecutar de todas formas"**.
+
+El programa se ejecuta en modo usuario estándar (`asInvoker`) sin requerir permisos de administrador ni realizar modificaciones en el registro de Windows.
+
+---
+
 ## 📋 Licencia
 Distribuido con fines docentes y de ingeniería para la asignatura de Proyectos de Ingeniería.
